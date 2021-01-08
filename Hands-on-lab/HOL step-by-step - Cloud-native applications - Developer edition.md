@@ -108,24 +108,11 @@ Each tenant will have the following containers:
 
 ## Requirements
 
-1. Microsoft Azure subscription must be pay-as-you-go or MSDN.
-
-   - Trial subscriptions will _not_ work.
-
-   - To complete this lab, ensure your account has the following roles:
-
-     - The [Owner](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#owner)
-       built-in role for the Azure Subscription you will use.
-
-     - Is a [Member](https://docs.microsoft.com/azure/active-directory/fundamentals/users-default-permissions#member-and-guest-users) user in the Azure AD tenant you will use. (Guest users will not have the necessary permissions.)
-
-     > **Note** If you do not meet these requirements, you may have to ask another member user with subscription owner rights to login to the portal and execute the create service principal step ahead of time.
-
-   - You must have enough cores available in your subscription to create the build agent and Azure Kubernetes Service cluster in Before the Hands-on Lab. You will need eight cores if following the exact instructions in the lab, or more if you choose additional cluster nodes or larger VM sizes. If you execute the steps required before the lab, you will be able to see if you need to request more cores in your sub.
+1. Completed the steps as per ["Before the hands-on lab setup guide"](Before%20the%20HOL%20-%20Cloud-native%20applications.md) 
 
 2. Local machine or a virtual machine configured with:
 
-   - A browser, preferably Chrome for consistency with the lab implementation tests.
+   - A browser, preferably the Microsoft Edge or Chrome for consistency with the lab implementation tests.
 
 3. You will install other tools throughout the exercises.
 
@@ -141,9 +128,21 @@ In this exercise, you will create a Dockerfile for the existing application comp
 
 In this task, you will create a new Dockerfile that will be used to build a container image for the Content API application.
 
-> **Note**: You will be working in a Linux VM without friendly editor tools. You must follow the steps very carefully to work with Vim for a few editing exercises if you are not already familiar with Vim.
+1. Open a new SSH connection to your lab Virtual Machine. 
 
-1. From cloud shell, navigate to the `content-api` folder. List the files in the folder with this command. The output should look like the screenshot below.
+   ```bash
+   ssh -i .ssh/fabmedical adminfabmedical@HOST_IP_ADDRESS
+   Enter passphrase for key '.ssh/fabmedical':
+   ```
+
+> **Note:** 
+>   1. By default Azure VM IP addresses change if they are stopped. If you stopped your VM and didn't reserve the IP address or set a hostname then you should check the new IP address of the lab machine.
+>
+>  2. If you performed the Optional setup task an wish to use Visual Studio Code Remote Development then [follow the documentation](https://code.visualstudio.com/docs/remote/ssh#_connect-to-a-remote-host) on how to connect. If you run into issues check the SSH config hasn't stripped the dot and path from the key file.
+>
+>  3. If you did not install Visual Studio Code then you will be working with `Vim` for a few editing exercises. Steps are included on how to work with files.
+
+2. Navigate to the `content-api` folder. List the files in the folder with this command. The output should look like the screenshot below.
 
    ```bash
    cd ../content-api
@@ -152,9 +151,7 @@ In this task, you will create a new Dockerfile that will be used to build a cont
 
    ![In this screenshot of the console window, ll has been typed and run at the command prompt. The files in the folder are listed in the window. At this time, we are unable to capture all of the information in the window. Future versions of this course should address this.](media/image55.png "List the files")
 
-2. Create a new file named `Dockerfile` and note the casing in the name. Use the
-   following Vim command to create a new file. The cloud shell window should
-   look as shown in the following screenshot.
+2. Create a new file named `Dockerfile` (uppercase D). The window should look as shown in the following screenshot.
 
    ```bash
    vi Dockerfile
@@ -162,43 +159,15 @@ In this task, you will create a new Dockerfile that will be used to build a cont
 
    ![This is a screenshot of a new file named Dockerfile in the console window.](media/image56.png "Open new file in VIM")
 
-3. Select `i` on your keyboard. You will see the bottom of the window showing INSERT mode.
+   > **Note:** if you are using Visual Studio Code then you can select to open the remote folder and navigate as necessary. Select the **New file** button and enter **Dockerfile** to create the new file remotely. 
+
+3. Vim users: type `i` on your keyboard to put Vim into insert mode. You will see the bottom of the window showing INSERT mode.
 
    ![INSERT appears at the bottom of the Dockerfile window.](media/image57.png "Insert mode")
 
-4. Type the following into the file. These statements produce a Dockerfile that describes the following:
+4. Type the following into the file. These statements are described below.
 
-   - The base stage includes environment setup which we expect to change very rarely, if at all.
-
-     - Creates a new Docker image from the base image node:alpine. This base image has node.js on it and is optimized for small size.
-
-     - Add `curl` to the base image to support Docker health checks.
-
-     - Creates a directory on the image where the application files can be copied.
-
-     - Exposes application port `3001` to the container environment so that the application can be reached at port `3001`.
-
-   - The build stage contains all the tools and intermediate files needed to create the application.
-
-     - Creates a new Docker image from `node:argon`.
-
-     - Creates a directory on the image where the application files can be copied.
-
-     - Copies `package.json` to the working directory.
-
-     - Runs npm install to initialize the node application environment.
-
-     - Copies the source files for the application over to the image.
-
-   - The final stage combines the base image with the build output from the build stage.
-
-     - Sets the working directory to the application file location.
-
-     - Copies the app files from the build stage.
-
-     - Indicates the command to start the node application when the container is run.
-
-   > **Note**: Type the following into the editor, as you may have errors with copying and pasting:
+   > **Note**: Type the following into the Vim editor, as you may have errors with copying and pasting. Visual Studio Code users can copy and paste.
 
    ```Dockerfile
    FROM node:alpine AS base
@@ -222,7 +191,39 @@ In this task, you will create a new Dockerfile that will be used to build a cont
    CMD [ "npm", "start" ]
    ```
 
-5. When you are finished typing, hit the Esc key and type `:wq` and hit the Enter key to save the changes and close the file.
+This Dockerfile describes a multi-stage build of the following:
+
+   - The base stage includes environment setup which we expect to change very rarely, if at all.
+
+     - Creates a new Docker image from the base image `node:alpine`. This base image has node.js on it and is optimized for small size.
+
+     - Add `curl` to the base image to support Docker health checks.
+
+     - Creates a directory on the image where the application files can be copied.
+
+     - Exposes application TCP port `3001` to the container environment so that the application can be reached at port `3001`.
+
+   - The build stage contains all the tools and intermediate files needed to create the application.
+
+     - Creates a new Docker image from `node:argon`.
+
+     - Creates a directory on the image where the application files can be copied.
+
+     - Copies `package.json` to the working directory.
+
+     - Runs `npm install` to initialize the node application environment.
+
+     - Copies the source files for the application over to the image.
+
+   - The final stage combines the base image with the build output from the build stage.
+
+     - Sets the working directory to the application file location.
+
+     - Copies the app files from the build stage.
+
+     - Indicates the command to start the node application when the container is run.
+
+5. Vim users: when you are finished typing, hit the Esc key and type `:wq` and hit the Enter key to save the changes and close the file. 
 
    ```bash
    <Esc>
@@ -238,7 +239,7 @@ In this task, you will create a new Dockerfile that will be used to build a cont
 
    ![In this screenshot of the console window, ll has been typed and run at the command prompt. The Dockerfile file is highlighted at the top of list.](media/image58.png "Highlight the Dockerfile")
 
-7. Verify the file contents to ensure it was saved as expected. Type the following command to see the output of the Dockerfile in the command window.
+7. Vim users: verify the file contents to ensure it was saved as expected. Type the following command to see the output of the Dockerfile in the command window. If it doesn't appear correct you can delete using `rm Dockerfile` and try again.
 
    ```bash
    cat Dockerfile
@@ -246,13 +247,15 @@ In this task, you will create a new Dockerfile that will be used to build a cont
 
 ### Task 4: Create Docker images
 
-In this task, you will create Docker images for the application --- one for the API application and another for the web application. Each image will be created via Docker commands that rely on a Dockerfile.
+In this task, you will create local Docker images for the application --- one for the API application and another for the web application. Each image will be created via Docker commands that rely on a Dockerfile.
 
-1. From cloud shell connected to the build agent VM, type the following command to view any Docker images on the VM. The list will only contain the mongodb image downloaded earlier.
+1. From SSH prompt connected to the lab VM, type the following command to view any Docker images on the VM. The list will only contain the mongodb image downloaded earlier.
 
    ```bash
    docker image ls
    ```
+
+   > **Note:** if you are using Visual Studio Code you can open a remote Terminal by selecting Terminal > New Terminal. You can then run this and follow commands.
 
 2. From the content-api folder containing the API application files and the new Dockerfile you created, type the following command to create a Docker image for the API application. This command does the following:
 
@@ -284,7 +287,9 @@ In this task, you will create Docker images for the application --- one for the 
    git push
    ```
 
-   Enter credentials if prompted.
+   Enter credentials if prompted. In Visual Studio Code you can use the Git Extension to commit and push to GitHub.
+
+   > **Note:** you may receive an email about a failed build on GitHub Actions. You can ignore this for now as we will address later.
 
 5. Navigate to the content-web folder again and list the files. Note that this folder already has a Dockerfile.
 
@@ -306,39 +311,72 @@ In this task, you will create Docker images for the application --- one for the 
    ```bash
    docker image build -t content-web .
    ```
-
-8. Navigate to the content-init folder again and list the files. Note that this folder already has a Dockerfile.
-
-   ```bash
-   cd ../content-init
-   ll
-   ```
-
-9. View the Dockerfile contents -- which are similar to the file you created previously in the API folder. Type the following command:
-
-   ```bash
-   cat Dockerfile
-   ```
-
-10. Type the following command to create a Docker image for the init application.
-
-      ```bash
-      docker image build -t content-init .
-      ```
-
 11. When complete, you will see eight images now exist when you run the Docker images command.
 
    ```bash
    docker image ls
    ```
-   
-   ![Three images are now visible in this screenshot of the console window: content-init, content-web, content-api, and node.](media/vm-list-containers.PNG "View content images")
 
 ### Task 5: Run a containerized application
 
-The web application container will be calling endpoints exposed by the API application container and the API application container will be communicating with mongodb. In this exercise, you will launch the images you created as containers on the same bridge network you created when starting mongodb.
+The web application container will be calling endpoints exposed by the API application container and the API application container will be communicating with a containerized mongodb instance.
 
-1. Create and start the API application container with the following command. The command does the following:
+1. On your lab VM create a Docker network named `fabmedical`:
+
+   ```bash
+   docker network create fabmedical
+   ```
+
+2. Run a mongodb container instance for local testing. The image will be downloaded automatically if required.
+
+   ```bash
+   docker container run --name mongo --net fabmedical -p 27017:27017 -d mongo:4.0
+   ```
+
+3. Once completed you can test that the mongodb instance is running using the following commands
+
+   ```bash
+   mongo
+   showdbs
+   quit()
+   ```
+
+   ![Screenshot showing commands to access local mongodb instance and check status.](media/Ex1-Task1.5.png "mongodb test")
+
+4. Initialize the mongodb database with test content as follows.
+
+   ```bash
+   cd ../content-init
+   npm install
+   ```
+
+   > **Note**: In some cases, the `root` user will be assigned ownership of your user's `.config` folder. If this happens, run the following command to return ownership to `adminfabmedical` and then try `npm install` again:
+
+   ```bash
+   sudo chown -R $USER:$(id -gn $USER) /home/adminfabmedical/.config
+   ```
+
+5. Initialize the database. Sample output is shown below.
+
+   ```bash
+   nodejs server.js
+   ```
+
+   ![Screenshot showing commands to populate mongodb instance with data.](media/populate-mongo.png "Output from populating mongodb")
+
+6. Confirm database was populated.
+
+   ```bash
+   mongo
+   show dbs
+   use contentdb
+   show collections
+   db.speakers.find()
+   db.sessions.find()
+   quit()
+   ```
+
+7. Create and start the API application container with the following command. The command does the following:
 
    - Names the container `api` for later reference with Docker commands.
 
@@ -352,9 +390,9 @@ The web application container will be calling endpoints exposed by the API appli
    docker container run --name api --net fabmedical -p 3001:3001 content-api
    ```
 
-2. The `docker container run` command has failed because it is configured to connect to mongodb using a localhost URL. However, now that content-api is isolated in a separate container, it cannot access mongodb via localhost even when running on the same docker host. Instead, the API must use the bridge network to connect to mongodb.
+8. The `docker container run` command has failed because it is configured to connect to mongodb using a localhost URL. However, now that content-api is isolated in a separate container, it cannot access mongodb via localhost even when running on the same docker host. Instead, the API must use the bridge network to connect to mongodb.
 
-   ```text
+   ```bash
    > content-api@0.0.0 start
    > node ./server.js
 
@@ -375,14 +413,14 @@ The web application container will be calling endpoints exposed by the API appli
    npm ERR!     /root/.npm/_logs/2020-11-23T03_04_12_948Z-debug.log
    ```
 
-3. The content-api application allows an environment variable to configure the mongodb connection string. Remove the existing container, and then instruct the docker engine to set the environment variable by adding the `-e` switch to the `docker container run` command. Also, use the `-d` switch to run the api as a daemon.
+9. The content-api application allows an environment variable to configure the mongodb connection string. Remove the existing container, and then instruct the docker engine to set the environment variable by adding the `-e` switch to the `docker container run` command. Also, use the `-d` switch to run the api as a daemon.
 
    ```bash
    docker container rm api
    docker container run --name api --net fabmedical -p 3001:3001 -e MONGODB_CONNECTION=mongodb://mongo:27017/contentdb -d content-api
    ```
 
-4. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to mongodb.
+10. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to mongodb.
 
    ```bash
    docker container ls
@@ -391,19 +429,19 @@ The web application container will be calling endpoints exposed by the API appli
 
    ![In this screenshot of the console window, docker container ls has been typed and run at the command prompt, and the "api" container is in the list with the following values for Container ID, Image, Command, Created, Status, Ports, and Names: 458d47f2aaf1, content-api, "docker-entrypoint.s...", 37 seconds ago, Up 36 seconds, 0.0.0.0:3001->3001/tcp, and api.](media/image61.png "List Docker containers")
 
-5. Test the API by curling the URL. You will see JSON output as you did when testing previously.
+11. Test the API by curling the URL. You will see JSON output containing speaker information.
 
    ```bash
    curl http://localhost:3001/speakers
    ```
 
-6. Create and start the web application container with a similar `docker container run` command -- instruct the docker engine to use any port with the `-P` command.
+12. Create and start the web application container with a similar `docker container run` command -- instruct the docker engine to use any port with the `-P` command.
 
    ```bash
    docker container run --name web --net fabmedical -P -d content-web
    ```
 
-7. Enter the command to show running containers again, and you will observe that both the API and web containers are in the list. The web container shows a dynamically assigned port mapping to its internal container port `3000`.
+13. Enter the command to show running containers again, and you will observe that both the API and web containers are in the list. The web container shows a dynamically assigned port mapping to its internal container port `3000`.
 
    ```bash
    docker container ls
@@ -411,17 +449,19 @@ The web application container will be calling endpoints exposed by the API appli
 
    ![In this screenshot of the console window, docker container ls has again been typed and run at the command prompt. 0.0.0.0:32768->3000/tcp is highlighted under Ports.](media/image62.png "List Docker containers")
 
-8. Test the web application by fetching the URL with curl. For the port, use the dynamically assigned port, which you can find in the output from the previous command. You will see HTML output, as you did when testing previously.
+14. Test the web application by fetching the URL with curl. For the port, use the dynamically assigned port, which you can find in the output from the previous command. You will see HTML output, as you did when testing previously.
 
    ```bash
-   curl http://localhost:[PORT]/speakers.html
+   curl http://localhost:32768/speakers.html
    ```
+
+   > **Note:** the port number (32768) may be different in your enviornment, so check output from Step 15.
 
 ### Task 6: Setup environment variables
 
-In this task, you will configure the `web` container to communicate with the API container using an environment variable, similar to the way the mongodb connection string is provided to the api.
+In this task, you will configure the Web container so that it can use an environment variable for the URL to use to communicate with the API container. This is similar to the way the mongodb connection string is provided to the API container.
 
-1. From cloud shell connected to the build agent VM, stop and remove the web container using the following commands.
+1. On your lab VM stop and remove the web container using the following commands.
 
    ```bash
    docker container stop web
@@ -434,7 +474,7 @@ In this task, you will configure the `web` container to communicate with the API
    docker container ls -a
    ```
 
-3. Review the `app.js` file.
+3. Open the content-web folder and review the `app.js` file.
 
    ```bash
    cd ../content-web
@@ -447,11 +487,10 @@ In this task, you will configure the `web` container to communicate with the API
    const contentApiUrl = process.env.CONTENT_API_URL || "http://localhost:3001";
    ```
 
-5. Open the Dockerfile for editing using Vim and press the `i` key to go into edit mode.
+5. Open the Dockerfile for editing using Vim and press the `i` key to go into edit mode. You can also edit it in Visual Studio Code remotely if you have it installed.
 
    ```bash
    vi Dockerfile
-   <i>
    ```
 
 6. Locate the `EXPOSE` line shown below and add a line above it that sets the default value for the environment variable, as shown in the screenshot.
@@ -489,7 +528,7 @@ In this task, you will configure the `web` container to communicate with the API
     curl http://localhost:[PORT]/speakers.html
     ```
 
-11. You will not be able to browse to the web application on the ephemeral port because the VM only exposes a limited port range. Now you will stop the web container and restart it using port `3000` to test in the browser. Type the following commands to stop the container, remove it, and run it again using explicit settings for the port.
+11. You will not be able to browse to the web application on the ephemeral port because the lab VM only exposes a limited port range. Now you will stop the web container and restart it using port `3000` to test in the browser. Type the following commands to stop the container, remove it, and run it again using explicit settings for the port.
 
     ```bash
     docker container stop web
@@ -503,13 +542,18 @@ In this task, you will configure the `web` container to communicate with the API
     curl http://localhost:3000/speakers.html
     ```
 
-13. You can now use a web browser to navigate to the website and successfully view the application at port `3000`. Replace `[BUILDAGENTIP]` with the **IP address** you used previously.
+13. You can now use a web browser to navigate to the website and successfully view the application at port `3000`. Replace `[LAB_VM_IP]` with the **IP address** of the virtual machine (this is the same IP you have used for SSH).
 
     ```bash
-    http://[BUILDAGENTIP]:3000
+    http://[LAB_VM_IP]:3000
 
     EXAMPLE: http://13.68.113.176:3000
     ```
+
+   Navigate to the Speakers page and you will see the results.
+
+   ![In this screenshot we see the resulting web application running on a Container on an Azure VM.](media/web-app.png "Speaker page on website.")
+
 
 14. Commit your changes and push to the repository.
 
@@ -523,7 +567,6 @@ In this task, you will configure the `web` container to communicate with the API
 
 ### Task 7: Push images to Azure Container Registry
 
-To run containers in a remote environment, you will typically push images to a Docker registry, where you can store and distribute images. Each service will have a repository that can be pushed to and pulled from with Docker commands. Azure Container Registry (ACR) is a managed private Docker registry service based on Docker Registry v2.
 
 In this task, you will push images to your ACR account, version images with tagging, and setup continuous integration (CI) to build future versions of your containers and push them to ACR automatically.
 
@@ -619,12 +662,23 @@ In this task, you will push images to your ACR account, version images with tagg
     docker image pull [LOGINSERVER]/content-web:v1
     ```
 
-### Task 8: Setup CI Pipeline to Push Images
+### Task 8: Setup CI Pipeline to Build and Push Images
 
-In this task, you will use YAML to define a GitHub Actions workflow that builds your Docker
-image and pushes it to your ACR instance automatically.
+To run containers in a remote environment, you will typically push images to a Container Registry, where you can store and distribute images. In our scenario each service (web and API) will have a repository no a Registry that can be pushed to and pulled from using standard Docker commands. We will use Azure Container Registry (ACR) which is a managed private Docker registry service based on Docker Registry v2.
 
-1. In GitHub, return to the **Fabmedical** repository screen, and select the **Settings** tab.
+In this task, you will use GitHub Actions to build your Docker images and pushes them to your ACR instance automatically.
+
+1. In the [Azure Portal](https://portal.azure.com/), navigate to the ACR that was created for you by the ARM template you executed in the "Before the hands-on lab" exercise.
+
+2. Select **Access keys** under **Settings** on the left-hand menu.
+
+   ![In this screenshot of the left-hand menu, Access keys is highlighted below Settings.](media/image64.png "Access keys")
+
+3. The Access keys blade displays the Login server, username, and password that will be required for the next step. Keep this handy as you perform actions on the build VM.
+
+   > **Note**: If the username and password do not appear, select Enable on the Admin user option.
+
+4. In another browser tab open GitHub, and open the **Fabmedical** repository. Select the **Settings** tab.
 
 2. From the left menu, select **Secrets**.
 
@@ -640,26 +694,9 @@ image and pushes it to your ACR instance automatically.
 
     ![Secrets screen with both the ACR_USERNAME and ACR_PASSWORD secrets created.](media/2020-08-24-21-51-24.png "Secrets screen")
 
-6. In your Azure Cloud Shell session connected to the build agent VM, navigate to the `~/Fabmedical` directory:
+6. On your lab VM, navigate to the main `Fabmedical/.github/workflows` directory which contains our existing GitHub Actions defintions.
 
-   ```bash
-   cd ~/Fabmedical
-   ```
-
-7. Before the GitHub Actions workflows can be setup, the `.github/workflows` directory needs to be created, if it doesn't already exist. Do this by running the following commands:
-
-    ```bash
-    mkdir ~/Fabmedical/.github
-    mkdir ~/Fabmedical/.github/workflows
-    ```
-
-8. Navigate to the `.github/workflows` directory:
-
-    ```bash
-    cd ~/Fabmedical/.github/workflows
-    ```
-
-9. Next create the workflow YAML file.
+7. We next need to  create the GitHub definition for our `content-web` container. If you using Visual Studio Code remote you can simply create a new file, otherwise with Vim do the following:
 
     ```dotnetcli
     vi content-web.yml
@@ -729,7 +766,7 @@ image and pushes it to your ACR instance automatically.
 
     ```bash
     git add .
-    git commit -m "Added workflow YAML"
+    git commit -m "Added content-web Action definition"
     git push
     ```
 
@@ -769,7 +806,7 @@ image and pushes it to your ACR instance automatically.
 
 **Duration**: 20 minutes
 
-At this point, you have the web and API applications running in Azure Kubernetes Service. The next, step is to migrate the MongoDB database data over to Azure Cosmos DB. This exercise will use the Azure Database Migration Service to migrate the data from the MongoDB database into Azure Cosmos DB.
+At this point, you have the web and API applications containerised. The next step is to migrate the MongoDB data over to Azure Cosmos DB. This exercise will use the [Azure Database Migration Service](https://azure.microsoft.com/services/database-migration/) to migrate the data from the MongoDB database into Azure Cosmos DB.
 
 ### Task 1: Enable Microsoft.DataMigration resource provider
 
@@ -893,7 +930,7 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
 **Duration**: 30 minutes
 
-In this exercise, you will connect to the Azure Kubernetes Service cluster you created before the hands-on lab and deploy the Docker application to the cluster using Kubernetes.
+In this exercise, you will connect to the Azure Kubernetes Service cluster you created before the hands-on lab and deploy the containerized application to the cluster.
 
 ### Task 1: Tunnel into the Azure Kubernetes Service cluster
 

@@ -363,6 +363,8 @@ FabMedical has provided starter files for you. They have taken a copy of the web
 
 In this task, you clone your newly created repository from GitHub so you can work with them on the lab VM.
 
+> **Note:** By default Azure VM IP addresses change if they are stopped. You can reserve the IP or set a hostname to avoid issues with connections if you stop the VM.
+
 1. Connect securely to your lab VM using SSH (replace HOST_IP_ADDRESS with IP of your VM). If prompted, enter the passphrase you used when first creating the SSH key.
 
    ```bash
