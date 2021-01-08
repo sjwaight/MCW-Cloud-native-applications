@@ -28,8 +28,8 @@ The names of manufacturers, products, or URLs are provided for informational pur
   - [Requirements](#requirements)
   - [Before the hands-on lab](#before-the-hands-on-lab)
     - [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell)
-    - [Task 2: Download Starter Files](#task-2-download-starter-files)
-    - [Task 3: Resource Group](#task-3-resource-group)
+    - [Task 2: Clone Starter Files](#task-2-clone-starter-files)
+    - [Task 3: Create Resource Group](#task-3-create-resource-group)
     - [Task 4: Create an SSH key](#task-4-create-an-ssh-key)
     - [Task 5: Create a Service Principal](#task-5-create-a-service-principal)
     - [Task 6: Deploy ARM Template](#task-6-deploy-arm-template)
@@ -58,7 +58,7 @@ The names of manufacturers, products, or URLs are provided for informational pur
 
    - You must have enough cores available in your subscription to create the build agent and Azure Kubernetes Service cluster in [Task 6: Deploy ARM Template](#Task-6-Deploy-ARM-Template). You'll need eight cores if following the exact instructions in the lab, more if you choose additional agents or larger VM sizes. Execute the steps required before the lab to see if you need to request more cores in your sub.
 
-2. An account in Microsoft [GitHub](https://github.com).
+2. A free account on [GitHub](https://github.com/).
 
 3. Local machine or a virtual machine configured with:
 
@@ -74,11 +74,13 @@ You should follow all of the steps provided in this section _before_ taking part
 
 ### Task 1: Setup Azure Cloud Shell
 
-1. Open a cloud shell by selecting the cloud shell icon in the menu bar.
+1. Open Azure Cloud Shell by selecting the cloud shell icon in the menu bar in the Azure Portal or by navigating to https://shell.azure.com/.
 
    ![The cloud shell icon is highlighted on the menu bar.](media/b4-image35.png "Cloud Shell")
 
-2. The cloud shell opens in the browser window. Choose **Bash** if prompted or use the left-hand dropdown on the shell menu bar to choose **Bash** from the dropdown (as shown). If prompted, select **Confirm**.
+2. If prompted, select the right Azure Subscription and create a Storage Account.
+
+3. Choose **Bash** if prompted or use the dropdown at the top left of the shell menu bar to choose **Bash** (as shown). If prompted, select **Confirm**.
 
    ![This is a screenshot of the cloud shell opened in a browser window. Bash was selected.](media/b4-image36.png "Cloud Shell Bash Window")
 
@@ -104,9 +106,9 @@ You should follow all of the steps provided in this section _before_ taking part
 
    ![In this screenshot of a Bash window, az account list has been typed and run at the command prompt. Some subscription information is visible in the window, and some information is obscured.](media/b4-image38.png "Bash AZ Account List")
 
-### Task 2: Download Starter Files
+### Task 2: Clone Starter Files
 
-In this task, you use `git` to copy the lab content to your cloud shell so that the lab starter files will be available.
+In this task, you use `git` to clone the lab content to your cloud shell so that the lab starter files will be available.
 
 > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
 
@@ -118,7 +120,7 @@ In this task, you use `git` to copy the lab content to your cloud shell so that 
 
    > **Note**: If you do not have enough free space, you may need to remove extra files from your cloud shell environment.  Try running `azcopy jobs clean` to remove any `azcopy` jobs and data you do not need.
 
-2. The lab files download.
+2. The lab files are cloned locally.
 
    ![In this screenshot of a Bash window, git clone has been typed and run at the command prompt. The output from git clone is shown.](media/b4-2019-09-30_21-25-06.png "Bash Git Clone")
 
@@ -128,11 +130,11 @@ In this task, you use `git` to copy the lab content to your cloud shell so that 
    rm -rf MCW-Cloud-native-applications/.git
    ```
 
-### Task 3: Resource Group
+### Task 3: Create Azure Resource Group
 
 Create an Azure Resource Group to hold most of the resources that you create in this hands-on lab. This approach makes it easier to clean up later.
 
-1. In your cloud shell window, you type a command similar to the following command, be sure to replace the tokens:
+1. In your Cloud Shell window, you type a command similar to the following command, be sure to replace the tokens:
 
    > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
 
@@ -140,9 +142,9 @@ Create an Azure Resource Group to hold most of the resources that you create in 
    az group create -l '[LOCATION]' -n 'fabmedical-[SUFFIX]'
    ```
 
-   - **Suffix:** Throughout the lab, suffix should be used to make resources unique, like your email prefix or your first initial and last name.
+   - **Suffix:** Throughout the lab, [SUFFIX] should be used to make resources unique, like your email prefix or your first initial and last name.
 
-   - **Location:** Choose a region where all Azure Container Registry SKUs have to be available, which is currently: Canada Central, Canada East, North Central US, Central US, South Central US, East US, East US 2, West US, West US 2, West Central US, France Central, UK South, UK West, North Europe, West Europe, Australia East, Australia Southeast, Brazil South, Central India, South India, Japan East, Japan West, Korea Central, Southeast Asia, East Asia, and remember this for future steps so that the resources you create in Azure are all kept within the same region.
+   - **Location:** Choose a Region where Azure Container Registry is available. You can find this [list online](https://azure.microsoft.com/global-infrastructure/services/?products=container-registry&regions=us-east,us-east-2,us-central,us-north-central,us-south-central,us-west-central,us-west,us-west-2,canada-east,canada-central,south-africa-north,south-africa-west,asia-pacific-east,asia-pacific-southeast,australia-central,australia-central-2,australia-east,australia-southeast,usgov-non-regional,us-dod-central,us-dod-east,usgov-arizona,usgov-texas,usgov-virginia,brazil-south,brazil-southeast,china-non-regional,china-east,china-east-2,china-north,china-north-2,europe-north,europe-west,france-central,france-south,germany-non-regional,germany-central,germany-north,germany-northeast,germany-west-central,united-kingdom-south,united-kingdom-west,uae-central,uae-north,switzerland-north,switzerland-west,norway-east,norway-west,korea-central,korea-south,japan-east,japan-west,central-india,south-india,west-india). Use the same Region for all resources you create for this workshop.
 
    Example:
 
@@ -160,7 +162,7 @@ You create VMs during the upcoming exercises. In this section, you create an SSH
 
 1. From the cloud shell command line, enter the following command to ensure that a directory for the SSH keys exists. You can ignore any errors you see in the output.
 
-   > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
+   > **Note**: If you don't have a Cloud Shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
 
    ```bash
    mkdir .ssh
@@ -192,13 +194,13 @@ You create VMs during the upcoming exercises. In this section, you create an SSH
 
 ### Task 5: Create a Service Principal
 
-Azure Kubernetes Service (AKS) requires an Azure Active Directory (AAD) service principal to interact with Azure APIs. The service principal is needed to dynamically manage resources such as user-defined routes and the Layer 4 Azure Load Balancer. The easiest way to set up the service principal is by using the Azure cloud shell.
+Azure Kubernetes Service (AKS) uses an Azure Active Directory (AAD) Service Principal to interact with Azure APIs. The Service Principal is needed to dynamically manage resources such as user-defined routes and the Layer 4 Azure Load Balancer. The easiest way to set up the service principal is by using the Azure Cloud Shell and the Azure Command Line Interface (CLI).
 
 > **Note**: To complete this task, ensure your account is an [Owner](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#owner) built-in role for the subscription you use and is a [Member](https://docs.microsoft.com/azure/active-directory/fundamentals/users-default-permissions#member-and-guest-users) user in the Azure AD tenant you use. You may have trouble creating a service principal if you do not meet these requirements.
 
-1. To create a service principal, type the following command in the cloud shell command line, replacing {id} with your subscription identifier, and replacing suffix with your chosen suffix to make the name unique:
+1. To create a Service Principal, type the following command in the cloud shell command line, replacing {id} with your subscription identifier, and replacing suffix with your chosen suffix to make the name unique:
 
-   > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
+   > **Note**: If you don't have a Cloud Shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
 
    ```bash
    az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/{id}" --name="http://fabmedical-sp-{SUFFIX}"
@@ -208,7 +210,7 @@ Azure Kubernetes Service (AKS) requires an Azure Active Directory (AAD) service 
 
    ![In this screenshot of a Bash window, az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/{id}" --name="Fabmedical-sp-SUFFIX" has been typed and run at the command prompt. Service principal information is visible in the window, but at this time, we are unable to capture all of the information in the window. Future versions of this course should address this.](media/b4-image39.png "Bash AZ Create RBAC")
 
-3. To get the service principal object id, type the following command, replacing {appId} with your service principal appId:
+3. To get the Service Principal object id, type the following command, replacing {appId} with your service principal appId:
 
    ```bash
    az ad sp show --id {appId} --query "{objectId:@.objectId}"
@@ -222,7 +224,7 @@ Azure Kubernetes Service (AKS) requires an Azure Active Directory (AAD) service 
 
 In this section, you configure and execute an ARM template that creates all the resources that you need throughout the exercises.
 
-1. In Azure cloud shell, switch to the ARM template directory:
+1. In Azure Cloud Shell, switch to the ARM template directory:
 
    > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
 
