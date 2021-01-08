@@ -29,13 +29,13 @@ The names of manufacturers, products, or URLs are provided for informational pur
   - [Before the hands-on lab](#before-the-hands-on-lab)
     - [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell)
     - [Task 2: Clone Starter Files](#task-2-clone-starter-files)
-    - [Task 3: Create Resource Group](#task-3-create-resource-group)
+    - [Task 3: Create Azure Resource Group](#task-3-create-azure-resource-group)
     - [Task 4: Create an SSH key](#task-4-create-an-ssh-key)
     - [Task 5: Create a Service Principal](#task-5-create-a-service-principal)
     - [Task 6: Deploy ARM Template](#task-6-deploy-arm-template)
     - [Task 7: Create a GitHub repository](#task-7-create-a-github-repository)
-    - [Task 8: Connect securely to the build agent](#task-8-connect-securely-to-the-build-agent)
-    - [Task 10: Clone Repositories to the Build Agent](#task-10-clone-repositories-to-the-build-agent)
+    - [Task 8: Clone Repositories to the Build Agent](#task-8-clone-repository-to-your-lab-virtual-machine)
+    - [Task 9: Optional - Setup Visual Studio Code Remote Development](#task-9-optional---setup-visual-studio-code-remote-development)
 
 <!-- /TOC -->
 
@@ -227,7 +227,7 @@ Azure Kubernetes Service (AKS) uses an Azure Active Directory (AAD) Service Prin
 
 ### Task 6: Deploy ARM Template
 
-In this section, you configure and execute an ARM template that creates all the resources that you need throughout the exercises.
+In this section, you configure and execute an ARM template that creates all the resources that you need throughout the exercisesin the lab.
 
 1. In Azure Cloud Shell, switch to the ARM template directory:
 
@@ -359,11 +359,18 @@ FabMedical has provided starter files for you. They have taken a copy of the web
 
 14. Refresh your GitHub repository, you should now see the code published.
 
-### Task 10: Clone Repositories to the Build Agent
+### Task 8: Clone repository to your lab Virtual Machine
 
-In this task, you clone your repositories from GitHub so you can work with them on the build agent.
+In this task, you clone your newly created repository from GitHub so you can work with them on the lab VM.
 
-1. As you previously did in cloud shell, set your username and email which are used for git commits.
+1. Connect securely to your lab VM using SSH (replace HOST_IP_ADDRESS with IP of your VM). If prompted, enter the passphrase you used when first creating the SSH key.
+
+   ```bash
+   ssh -i .ssh/fabmedical adminfabmedical@HOST_IP_ADDRESS
+   Enter passphrase for key '.ssh/fabmedical':
+   ```
+
+2. As you previously did in Cloud Shell, set your username and email which are used for git commits.
 
    ```bash
    git config --global user.email "you@example.com"
@@ -376,8 +383,7 @@ In this task, you clone your repositories from GitHub so you can work with them 
    > sudo chown -R $USER:$(id -gn $USER) /home/adminfabmedical/.config
    > ```
 
-2. Configure git CLI to cache your credentials, so that you don't have to keep
-   re-typing them.
+2. Configure git CLI to cache your credentials, so that you don't have to keep re-typing them.
 
    ```bash
    git config --global credential.helper cache
@@ -389,7 +395,9 @@ In this task, you clone your repositories from GitHub so you can work with them 
    > sudo chown -R $USER:$(id -gn $USER) /home/adminfabmedical/.config
    > ```
 
-3. Use the GitHub URL to clone the repository code to your build agent machine.
+3. On GitHub copy the Clone URL for the new repository and then use `git clone` to clone it to the VM.
+
+    ![GitHub clone repository dialog open with copy button highlighted.](media/git-clone-repo.png "GitHub repository clone URL")
 
    ```bash
    git clone <GITHUB_REPOSITORY_URL>
@@ -401,6 +409,18 @@ In this task, you clone your repositories from GitHub so you can work with them 
    > sudo chown -R $USER:$(id -gn $USER) /home/adminfabmedical/.config
    > ```
 
-You should follow all steps provided _before_ performing the Hands-on lab.
+**You are now ready to start with the main labs!**
+ - [Developer](HOL%20step-by-step%20-%20Cloud-native%20applications%20-%20Developer%20edition.md) 
+ - [Infrastructure](HOL%20step-by-step%20-%20Cloud-native%20applications%20-%20Infrastructure%20edition.md)  
 
-[logo]: https://github.com/Microsoft/MCW-Template-Cloud-Workshop/raw/master/Media/ms-cloud-workshop.png
+### Task 9: Optional - Setup Visual Studio Code Remote Development
+
+This step is not required to complete the labs, but it may make some activities easier to complete.
+
+If you have access to a local computer with SSH installed and internet access then you can utilise Visual Studio Code's Remote Development capabilities over SSH.
+
+As you have already setup a lab Virtual Machine that meets the specifications all you need to do is download Visual Studio Code locally and install the Remote Development extension pack.
+
+Even if you're on a Windows or Mac you can still use this feature to access the remote Linux box for development purposes.
+
+Please follow the official setup guide if you wish to proceed: https://code.visualstudio.com/docs/remote/ssh
