@@ -35,7 +35,6 @@ The names of manufacturers, products, or URLs are provided for informational pur
     - [Task 6: Deploy ARM Template](#task-6-deploy-arm-template)
     - [Task 7: Create a GitHub repository](#task-7-create-a-github-repository)
     - [Task 8: Connect securely to the build agent](#task-8-connect-securely-to-the-build-agent)
-    - [Task 9: Complete the build agent setup](#task-9-complete-the-build-agent-setup)
     - [Task 10: Clone Repositories to the Build Agent](#task-10-clone-repositories-to-the-build-agent)
 
 <!-- /TOC -->
@@ -46,7 +45,7 @@ The names of manufacturers, products, or URLs are provided for informational pur
 
 1. Microsoft Azure subscription must be pay-as-you-go or MSDN.
 
-   - Trial subscriptions will _not_ work.
+   - Trial Azure Subscriptions will _not_ work.
 
    - To complete this lab setup (including [Task 5: Create a Service Principal](#Task-5-Create-a-Service-Principal)) ensure your account includes the following:
 
@@ -192,6 +191,12 @@ You create VMs during the upcoming exercises. In this section, you create an SSH
 
     ![In this screenshot of the cloud shell window, cat .ssh/fabmedical has been typed and run at the command prompt. Information about the public key content appears in the window.](media/b4-image571.png "Cloud Shell - cat .ssh")
 
+8. If you wish to SSH from other machines like your local workstation then you can copy the SSH keys from Cloud Shell and add them locally. In Cloud Shell select the **Upload/Download files** button and select **Download**. Download the `fabmedical` and `fabmedicalpub` files and copy them to your local .ssh folder. 
+
+    ![In this screenshot of the cloud shell window, cat .ssh/fabmedical has been typed and run at the command prompt. Information about the public key content appears in the window.](media/download-ssh-shell.png "Cloud Shell - download file")
+
+>**Note:** SSH clients are available on all major operating systems. Recent Windows 10 releases have an optional feature that installs an OpenSSH client. See the [Visual Studio Code documentation](https://code.visualstudio.com/docs/remote/troubleshooting#_installing-a-supported-ssh-client) for the best option.
+
 ### Task 5: Create a Service Principal
 
 Azure Kubernetes Service (AKS) uses an Azure Active Directory (AAD) Service Principal to interact with Azure APIs. The Service Principal is needed to dynamically manage resources such as user-defined routes and the Layer 4 Azure Load Balancer. The easiest way to set up the service principal is by using the Azure Cloud Shell and the Azure Command Line Interface (CLI).
@@ -250,7 +255,7 @@ In this section, you configure and execute an ARM template that creates all the 
    - **CosmosPairedLocation**: The secondary location of the Azure Cosmos DB. The below link can be used to help find the Azure Region Pair for your primary location. (example: `"westus"`).
    - **CosmosPairedLocationName**: The name of the secondary location of the Azure Cosmos DB. Use the location name that matches the secondary location defined in the previous key (example: `"West US"`).
 
-   > **Note**: A list of Azure Region Pairs can be found here: <https://docs.microsoft.com/en-us/azure/best-practices-availability-paired-regions#azure-regional-pairs>.
+   > **Note**: A list of Azure Region Pairs can be found here: <https://docs.microsoft.com/azure/best-practices-availability-paired-regions#azure-regional-pairs>.
 
 4. Select the **...** button and select **Save**.
 
@@ -274,37 +279,33 @@ In this section, you configure and execute an ARM template that creates all the 
 
 FabMedical has provided starter files for you. They have taken a copy of the websites for their customer Contoso Neuro and refactored it from a single node.js site into a website with a content API that serves up the speakers and sessions. This refactored code is a starting point to validate the containerization of their websites. Use this to help them complete a POC that validates the development workflow for running the website and API as Docker containers and managing them within the Azure Kubernetes Service environment.
 
-1. Open a web browser and navigate to <https://www.github.com>. Log in using your GitHub account credentials.
+1. Open a web browser and navigate to https://www.github.com. Log in using your GitHub account credentials.
 
-2. In the upper-right corner, expand the user drop down menu and select **Your repositories**.
+2. In the upper-right corner, select **+** and from the drop down select **New repository**.
 
     ![The user menu is expanded with the Your repositories item selected.](media/2020-08-23-18-03-40.png "User menu, your repositories")
 
-3. Next to the search criteria, locate and select the **New** button.
-
-    ![The GitHub Find a repository search criteria is shown with the New button selected.](media/2020-08-23-18-08-02.png "New repository button")
-
-4. On the **Create a new repository** screen, name the repository **Fabmedical** and select the **Create repository** button.
+3. On the **Create a new repository** screen, name the repository **Fabmedical** and select the **Create repository** button.
 
     ![Create a new repository page with Repository name field and Create repository button highlighted.](media/2020-08-23-18-11-38.png "Create a new repository")
 
-5. On the **Quick setup** screen, copy the **HTTPS** GitHub URL for your new repository, paste this in notepad for future use.
+4. On the **Quick setup** screen, copy the **HTTPS** GitHub URL for your new repository, paste this in notepad for future use.
 
     ![Quick setup screen is displayed with the copy button next to the GitHub URL textbox selected.](media/2020-08-23-18-15-45.png "Quick setup screen")
 
-6. Open a **new** Azure Cloud Shell console.  You can do this by selecting the **Open new session** button from the first console, or navigating to https://shell.azure.com and logging in with the same lab credentials.
+5. Open a **new** Azure Cloud Shell console.  You can do this by selecting the **Open new session** button from the first console, or navigating to https://shell.azure.com and logging in with the same lab credentials.
 
-7. Navigate to the FabMedical source code folder and list the contents.
+6. Navigate to the FabMedical source code folder and list the contents.
 
    ```bash
-   cd ~/MCW-Cloud-native-applications/Hands-on\ lab/lab-files/developer/
+   cd ~/MCW-Cloud-native-applications/Hands-on-lab/lab-files/developer/
    ls
    ```
 
-   > **Important note**: If you will be taking the Infrastructure edition of the lab, instead of using the above instructions, type the following ones:
+   > **Important note**: If you are completing the Infrastructure edition of the lab, instead of using the above instructions, type the following ones:
    >
    > ```bash
-   > cd ~/MCW-Cloud-native-applications/Hands-on\ lab/lab-files/infrastructure/
+   > cd ~/MCW-Cloud-native-applications/Hands-on-lab/lab-files/infrastructure/
    > ls
    > ```
    >
@@ -333,10 +334,10 @@ FabMedical has provided starter files for you. They have taken a copy of the web
     git commit -m "Initial Commit"
     ```
 
-11. Set the remote origin to the GitHub URL by issuing the following command:
+11. Set the remote origin to the new git repository on GitHub you just created by issuing the following command:
 
     ```bash
-    git remote add origin <your GitHub URL>
+    git remote add origin https://github.com/YOURNAME/YOURREPO.git
     ```
 
 12. Configure git CLI to cache your credentials, so that you don't have to keep re-typing them.
@@ -352,161 +353,11 @@ FabMedical has provided starter files for you. They have taken a copy of the web
     git push -u origin master
     ```
 
-    > **Note**: If you have multi-factor authentication, you will need to create a personal access token when using the cloud shell. Reference the following link for help with setting up a GitHub personal access token to use for authenticating `git` with your GitHub account: <https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token>.
+    > **Note**: If you have multi-factor authentication for GitHub, you will need to create a Personal Access Token (PAT) when using the Cloud Shell. Reference the following link for help with setting up a GitHub PAT to use for authenticating `git` with your GitHub account: https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token.
 
-    > **Note**: Once you have your personal access token, retry the above command, use your token as the password.
+    > **Note**: Once you have your PAT, retry the above command, use your token as the password.
 
 14. Refresh your GitHub repository, you should now see the code published.
-
-### Task 8: Connect securely to the build agent
-
-In this section, you validate that you can connect to the new build agent
-VM.
-
-1. Open a **new** Azure Cloud Shell console and run the following command to find the IP address for the build agent VM provisioned when you ran the ARM deployment:
-
-   > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
-
-   ```bash
-   az vm show -d -g fabmedical-[SUFFIX] -n fabmedical-[SHORT_SUFFIX] --query publicIps -o tsv
-   ```
-
-   Example:
-
-   ```bash
-   az vm show -d -g fabmedical-sol -n fabmedical-SOL --query publicIps -o tsv
-   ```
-
-2. In the cloud shell output, take note of the public IP address for the VM.
-
-   ![The cloud shell window is displayed with the Public IP address shown.](media/b4-2019-10-01_11-58-05.png "Azure Cloud Shell Public IP")
-
-3. Connect to the new VM you created by typing the following command:
-
-   ```bash
-    ssh -i [PRIVATEKEYNAME] [BUILDAGENTUSERNAME]@[BUILDAGENTIP]
-   ```
-
-   Replace the bracketed values in the command as follows:
-
-   - `[PRIVATEKEYNAME]`: Use the private key name `.ssh/fabmedical`, created above.
-
-   - `[BUILDAGENTUSERNAME]`: Use the username for the VM, in the default setup it is `adminfabmedical`.
-
-   - `[BUILDAGENTIP]`: The IP address for the build agent VM, retrieved in the previous step.
-
-   ```bash
-   ssh -i .ssh/fabmedical adminfabmedical@52.174.141.11
-   ```
-
-4. When asked to confirm if you want to connect, as the authenticity of the connection cannot be validated, type `yes`.
-
-5. When asked for the passphrase for the private key you created previously, enter this value.
-
-6. SSH connects to the VM and displays a command prompt such as the following. Keep this cloud shell window open for the next step:
-
-   `adminfabmedical@fabmedical-SUFFIX:~$`
-
-   ![In this screenshot of a Cloud Shell window, ssh -i .ssh/fabmedical adminfabmedical@52.174.141.11 has been typed and run at the command prompt. The information detailed above appears in the window.](media/b4-image27.png "Azure Cloud Shell Connect to Host")
-
-> **Note**: If you have issues connecting, you may have pasted the SSH public key incorrectly in the ARM template. Unfortunately, if this is the case, you will have to recreate the VM and try again.
-
-### Task 9: Complete the build agent setup
-
-In this task, you update the packages and install the Docker engine.
-
-1. Go to the cloud shell window that has the SSH connection open to the build agent VM.
-
-2. Update the Ubuntu packages and install curl and support for repositories over HTTPS in a single step by typing the following in a single line command. Respond by typing `Y` and pressing enter, if asked if you would like to proceed.
-
-   ```bash
-   sudo apt-get update && sudo apt install apt-transport-https ca-certificates curl software-properties-common
-   ```
-
-   > **Note**: This is a single line.
-
-3. Add Docker's official GPG key by typing the following in a single line command:
-
-   ```bash
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-   ```
-
-4. Add Docker's stable repository to Ubuntu packages list by typing the following in a single line command:
-
-   ```bash
-   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-   ```
-
-5. Add NodeJs PPA to use NodeJS LTS release and update the Ubuntu packages and install Docker engine, node.js, and the node package manager by typing the following commands, each on their own line. If asked if you would like to proceed, respond by typing `Y` and pressing enter.
-
-   ```bash
-   sudo apt-get install curl python-software-properties -y
-
-   curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-
-   sudo apt-get update && sudo apt-get install -y docker-ce nodejs mongodb-clients
-   ```
-
-6. Now, upgrade the Ubuntu packages to the latest version by typing the following in a single line command.
-
-   ```bash
-   sudo apt-get upgrade -y
-   ```
-
-7. When the command has completed, check the Docker version installed by executing this command. The output may look something like that shown in the following screenshot. Note that the server version is not shown yet, because you didn't run the command with elevated privileges (to be addressed shortly).
-
-   ```bash
-   docker version
-   ```
-
-   ![In this screenshot of a Cloud Shell window, docker version has been typed and run at the command prompt. Docker version information appears in the window.](media/b4-image28.png "Display Docker version")
-
-8. You may check the versions of node.js and npm as well, just for information purposes, using these commands:
-
-   ```bash
-   nodejs --version
-
-   npm -version
-   ```
-
-9. Install the Angular CLI.
-
-    ```bash
-    sudo npm install -g @angular/cli
-    ```
-
-10. To remove the requirement to use sudo, add your user to the Docker group. You can ignore any errors you see in the output.
-
-    ```bash
-    sudo usermod -aG docker $USER
-    ```
-
-    ![In this screenshot of a Cloud Shell window, sudo usermod -aG docker $USER has been typed and run at the command prompt. Errors appear in the window.](media/b4-image29.png "Remove SUDO requirement")
-
-11. For the user permission changes to take effect, exit the SSH
-    session by typing `exit`, then press \<Enter\>. Reconnect to the build agent VM using SSH as you did in the previous task.
-
-12. Repeat the Docker version command, and note the output now shows the server version as well.
-
-    ![In this screenshot of a Cloud Shell window, docker version has been typed and run at the command prompt. Docker version information appears in the window, in addition to server version information.](media/b4-image30.png "Display Docker version")
-
-13. Run a few Docker commands:
-
-    - One to see if there are any containers presently running.
-
-      ```bash
-      docker container ls
-      ```
-
-    - One to see if any containers exist, whether running or not.
-
-      ```bash
-      docker container ls -a
-      ```
-
-14. In both cases, you have an empty list but no errors while running the command. Your build agent is ready with the Docker engine running correctly.
-
-    ![In this screenshot of a Cloud Shell window, docker container ls has been typed and run at the command prompt, as has the docker container ls -a command.](media/b4-image31.png "Display Docker container list")
 
 ### Task 10: Clone Repositories to the Build Agent
 
