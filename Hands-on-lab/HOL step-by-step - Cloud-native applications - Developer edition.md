@@ -31,14 +31,11 @@ Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/int
   - [Solution architecture](#solution-architecture)
   - [Requirements](#requirements)
   - [Exercise 1: Create and build Docker images](#exercise-1-create-and-build-docker-images)
-    - [Task 1: Test the application](#task-1-test-the-application)
-    - [Task 2: Browsing to the web application](#task-2-browsing-to-the-web-application)
-    - [Task 3: Create a Dockerfile](#task-3-create-a-dockerfile)
-    - [Task 4: Create Docker images](#task-4-create-docker-images)
-    - [Task 5: Run a containerized application](#task-5-run-a-containerized-application)
-    - [Task 6: Setup environment variables](#task-6-setup-environment-variables)
-    - [Task 7: Push images to Azure Container Registry](#task-7-push-images-to-azure-container-registry)
-    - [Task 8: Setup CI Pipeline to Push Images](#task-8-setup-ci-pipeline-to-push-images)
+    - [Task 1: Create a Dockerfile](#task-1-create-a-dockerfile)
+    - [Task 2: Create Docker images](#task-2-create-docker-images)
+    - [Task 3: Run a containerized application](#task-3-run-a-containerized-application)
+    - [Task 4: Setup environment variables](#task-4-setup-environment-variables)
+    - [Task 5: Setup Continous Integration Pipeline to Push Images](#task-5-setup-continous-integration-pipeline-to-build-and-push-images)
   - [Exercise 2: Migrate MongoDB to Cosmos DB using Azure Database Migration Service](#exercise-2-migrate-mongodb-to-cosmos-db-using-azure-database-migration-service)
     - [Task 1: Enable Microsoft.DataMigration resource provider](#task-1-enable-microsoftdatamigration-resource-provider)
     - [Task 2: Provision Azure Database Migration Service](#task-2-provision-azure-database-migration-service)
@@ -123,6 +120,15 @@ Each tenant will have the following containers:
 **Duration**: 40 minutes
 
 In this exercise, you will create a Dockerfile for the existing application components, build Docker images, and run containers to execute the application.
+
+### Help references
+
+|                                            |                                                                                           |
+| ------------------------------------------ | :---------------------------------------------------------------------------------------: |
+| **Description**                            | **Links**                                                                                 |
+| Getting started with Docker                | https://docs.docker.com/get-started/                                                      |
+| About registries, repositories, and images | https://docs.microsoft.com/azure/container-registry/container-registry-concepts           |
+| Publishing Docker images                   | https://docs.github.com/free-pro-team@latest/actions/guides/publishing-docker-images   |
 
 ### Task 1: Create a Dockerfile
 
@@ -245,11 +251,11 @@ This Dockerfile describes a multi-stage build of the following:
    cat Dockerfile
    ```
 
-### Task 4: Create Docker images
+### Task 2: Create Docker images
 
 In this task, you will create local Docker images for the application --- one for the API application and another for the web application. Each image will be created via Docker commands that rely on a Dockerfile.
 
-1. From SSH prompt connected to the lab VM, type the following command to view any Docker images on the VM. The list will only contain the mongodb image downloaded earlier.
+1. From SSH prompt connected to the lab VM, type the following command to view any Docker images on the VM. The list will only contain the MongoDB image downloaded earlier.
 
    ```bash
    docker image ls
@@ -317,9 +323,9 @@ In this task, you will create local Docker images for the application --- one fo
    docker image ls
    ```
 
-### Task 5: Run a containerized application
+### Task 3: Run a containerized application
 
-The web application container will be calling endpoints exposed by the API application container and the API application container will be communicating with a containerized mongodb instance.
+The web application container will be calling endpoints exposed by the API application container and the API application container will be communicating with a containerized MongoDB instance.
 
 1. On your lab VM create a Docker network named `fabmedical`:
 
@@ -327,7 +333,7 @@ The web application container will be calling endpoints exposed by the API appli
    docker network create fabmedical
    ```
 
-2. Run a mongodb container instance for local testing. The image will be downloaded automatically if required.
+2. Run a MongoDB container instance for local testing. The image will be downloaded automatically if required.
 
    ```bash
    docker container run --name mongo --net fabmedical -p 27017:27017 -d mongo:4.0
@@ -337,13 +343,13 @@ The web application container will be calling endpoints exposed by the API appli
 
    ```bash
    mongo
-   showdbs
+   show dbs
    quit()
    ```
 
-   ![Screenshot showing commands to access local mongodb instance and check status.](media/Ex1-Task1.5.png "mongodb test")
+   ![Screenshot showing commands to access local MongoDB instance and check status.](media/Ex1-Task1.5.png "MongoDB test")
 
-4. Initialize the mongodb database with test content as follows.
+4. Initialize the MongoDB database with test content as follows.
 
    ```bash
    cd ../content-init
@@ -362,7 +368,7 @@ The web application container will be calling endpoints exposed by the API appli
    nodejs server.js
    ```
 
-   ![Screenshot showing commands to populate mongodb instance with data.](media/populate-mongo.png "Output from populating mongodb")
+   ![Screenshot showing commands to populate MongoDB instance with data.](media/populate-mongo.png "Output from populating MongoDB")
 
 6. Confirm database was populated.
 
@@ -390,7 +396,7 @@ The web application container will be calling endpoints exposed by the API appli
    docker container run --name api --net fabmedical -p 3001:3001 content-api
    ```
 
-8. The `docker container run` command has failed because it is configured to connect to mongodb using a localhost URL. However, now that content-api is isolated in a separate container, it cannot access mongodb via localhost even when running on the same docker host. Instead, the API must use the bridge network to connect to mongodb.
+8. The `docker container run` command has failed because it is configured to connect to MongoDB using a localhost URL. However, now that content-api is isolated in a separate container, it cannot access MongoDB via localhost even when running on the same docker host. Instead, the API must use the bridge network to connect to MongoDB.
 
    ```bash
    > content-api@0.0.0 start
@@ -413,14 +419,14 @@ The web application container will be calling endpoints exposed by the API appli
    npm ERR!     /root/.npm/_logs/2020-11-23T03_04_12_948Z-debug.log
    ```
 
-9. The content-api application allows an environment variable to configure the mongodb connection string. Remove the existing container, and then instruct the docker engine to set the environment variable by adding the `-e` switch to the `docker container run` command. Also, use the `-d` switch to run the api as a daemon.
+9. The content-api application allows an environment variable to configure the MongoDB connection string. Remove the existing container, and then instruct the docker engine to set the environment variable by adding the `-e` switch to the `docker container run` command. Also, use the `-d` switch to run the api as a daemon.
 
    ```bash
    docker container rm api
    docker container run --name api --net fabmedical -p 3001:3001 -e MONGODB_CONNECTION=mongodb://mongo:27017/contentdb -d content-api
    ```
 
-10. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to mongodb.
+10. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to MongoDB.
 
    ```bash
    docker container ls
@@ -457,9 +463,9 @@ The web application container will be calling endpoints exposed by the API appli
 
    > **Note:** the port number (32768) may be different in your enviornment, so check output from Step 15.
 
-### Task 6: Setup environment variables
+### Task 4: Setup environment variables
 
-In this task, you will configure the Web container so that it can use an environment variable for the URL to use to communicate with the API container. This is similar to the way the mongodb connection string is provided to the API container.
+In this task, you will configure the Web container so that it can use an environment variable for the URL to use to communicate with the API container. This is similar to the way the MongoDB connection string is provided to the API container.
 
 1. On your lab VM stop and remove the web container using the following commands.
 
@@ -565,110 +571,13 @@ In this task, you will configure the Web container so that it can use an environ
 
     Enter credentials if prompted.
 
-### Task 7: Push images to Azure Container Registry
-
-
-In this task, you will push images to your ACR account, version images with tagging, and setup continuous integration (CI) to build future versions of your containers and push them to ACR automatically.
-
-1. In the [Azure Portal](https://portal.azure.com/), navigate to the ACR you created in Before the hands-on lab.
-
-2. Select **Access keys** under **Settings** on the left-hand menu.
-
-   ![In this screenshot of the left-hand menu, Access keys is highlighted below Settings.](media/image64.png "Access keys")
-
-3. The Access keys blade displays the Login server, username, and password that will be required for the next step. Keep this handy as you perform actions on the build VM.
-
-   > **Note**: If the username and password do not appear, select Enable on the Admin user option.
-
-4. From the cloud shell session connected to your build VM, login to your ACR account by typing the following command. Follow the instructions to complete the login.
-
-   ```bash
-   docker login [LOGINSERVER] -u [USERNAME] -p [PASSWORD]
-   ```
-
-   For example:
-
-   ```bash
-   docker login fabmedicalsoll.azurecr.io -u fabmedicalsoll -p +W/j=l+Fcze=n07SchxvGSlvsLRh/7ga
-   ```
-
-   ![In this screenshot of the console window, the following has been typed and run at the command prompt: docker login fabmedicalsoll.azurecr.io](media/image65.png "Docker log into container")
-
-   > **Tip**: Make sure to specify the fully qualified registry login server (all lowercase).
-
-5. Run the following commands to properly tag your images to match your ACR account name.
-
-   ```bash
-   docker image tag content-web [LOGINSERVER]/content-web
-   docker image tag content-api [LOGINSERVER]/content-api
-   docker image tag content-init [LOGINSERVER]/content-init
-   ```
-
-   > **Note**: Be sure to replace the `[LOGINSERVER]` of your ACR instance.
-
-6. List your docker images and look at the repository and tag. Note that the repository is prefixed with your ACR login server name, such as the sample shown in the screenshot below.
-
-   ```bash
-   docker image ls
-   ```
-
-   ![This is a screenshot of a docker images list example.](media/vm-docker-images-list.PNG "Docker image list")
-
-7. Push the images to your ACR account with the following command:
-
-   ```bash
-   docker image push [LOGINSERVER]/content-web
-   docker image push [LOGINSERVER]/content-api
-   docker image push [LOGINSERVER]/content-init
-   ```
-
-   ![In this screenshot of the console window, an example of images being pushed to an ACR account results from typing and running the following at the command prompt: docker push [LOGINSERVER]/content-web.](media/image67.png "Push image to ACR")
-
-8. In the Azure Portal, navigate to your ACR account, and select **Repositories** under **Services** on the left-hand menu. You will now see two, one for each image.
-
-   ![In this screenshot, content-api and content-web each appear on their own lines below Repositories.](media/image68.png "Search for repositories")
-
-9. Select `content-api`. You will see the latest tag is assigned.
-
-   ![In this screenshot, content-api is selected under Repositories, and the Tags blade appears on the right.](media/image69.png "View latest repo tags")
-
-10. From the cloud shell session attached to the VM, assign the `v1` tag to each image with the following commands. Then list the Docker images to note that there are now two entries for each image: showing the `latest` tag and the `v1` tag. Also note that the image ID is the same for the two entries, as there is only one copy of the image.
-
-    ```bash
-    docker image tag [LOGINSERVER]/content-web:latest [LOGINSERVER]/content-web:v1
-    docker image tag [LOGINSERVER]/content-api:latest [LOGINSERVER]/content-api:v1
-    docker image tag [LOGINSERVER]/content-init:latest [LOGINSERVER]/content-init:v1
-    docker image ls
-    ```
-
-    ![In this screenshot of the console window is an example of tags being added and displayed.](media/image70.png "View latest image by tag")
-
-11. Push the images to your ACR account with the following command:
-
-    ```bash
-    docker image push [LOGINSERVER]/content-web:v1
-    docker image push [LOGINSERVER]/content-api:v1
-    docker image push [LOGINSERVER]/content-init:v1
-    ```
-
-12. Refresh one of the repositories to see the two versions of the image now appear.
-
-    ![In this screenshot, content-api is selected under Repositories, and the Tags blade appears on the right. In the Tags blade, latest and v1 appear under Tags.](media/image71.png "View two versions of image")
-
-13. Run the following commands to pull an image from the repository. Note that the default behavior is to pull images tagged with `latest`. You can pull a specific version using the version tag. Also, note that since the images already exist on the build agent, nothing is downloaded.
-
-    ```bash
-    docker image pull [LOGINSERVER]/content-web
-    docker image pull [LOGINSERVER]/content-web:v1
-    ```
-
-### Task 8: Setup CI Pipeline to Build and Push Images
+### Task 5: Setup Continous Integration Pipeline to Build and Push Images
 
 To run containers in a remote environment, you will typically push images to a Container Registry, where you can store and distribute images. In our scenario each service (web and API) will have a repository no a Registry that can be pushed to and pulled from using standard Docker commands. We will use Azure Container Registry (ACR) which is a managed private Docker registry service based on Docker Registry v2.
 
 In this task, you will use GitHub Actions to build your Docker images and pushes them to your ACR instance automatically.
 
-1. In the [Azure Portal](https://portal.azure.com/), navigate to the ACR that was created for you by the ARM template you executed in the "Before the hands-on lab" exercise.
+1. In the [Azure Portal](https://portal.azure.com/), navigate to the **Azure Container Registry** that was created for you by the ARM template you executed in the "Before the hands-on lab" exercise.
 
 2. Select **Access keys** under **Settings** on the left-hand menu.
 
@@ -678,7 +587,7 @@ In this task, you will use GitHub Actions to build your Docker images and pushes
 
    > **Note**: If the username and password do not appear, select Enable on the Admin user option.
 
-4. In another browser tab open GitHub, and open the **Fabmedical** repository. Select the **Settings** tab.
+4. In another browser tab open GitHub, and open your **Fabmedical** repository. Select the **Settings** tab.
 
 2. From the left menu, select **Secrets**.
 
@@ -696,7 +605,7 @@ In this task, you will use GitHub Actions to build your Docker images and pushes
 
 6. On your lab VM, navigate to the main `Fabmedical/.github/workflows` directory which contains our existing GitHub Actions defintions.
 
-7. We next need to  create the GitHub definition for our `content-web` container. If you using Visual Studio Code remote you can simply create a new file, otherwise with Vim do the following:
+7. We next need to  create the GitHub Action definition for our `content-web` container. If you are using Visual Studio Code you can simply create a new file, otherwise with Vim do the following:
 
     ```dotnetcli
     vi content-web.yml
@@ -760,7 +669,7 @@ In this task, you will use GitHub Actions to build your Docker images and pushes
               ${{ env.containerRegistry }}/${{ env.imageRepository }}:latest
     ```
 
-10. Save the file and exit VI by pressing `<Esc>` then `:wq`.
+10. Save the file and exit Vi by pressing `<Esc>` then `:wq`.
 
 11. Save the pipeline YAML, then commit and push it to the Git repository:
 
@@ -806,11 +715,22 @@ In this task, you will use GitHub Actions to build your Docker images and pushes
 
 **Duration**: 20 minutes
 
-At this point, you have the web and API applications containerised. The next step is to migrate the MongoDB data over to Azure Cosmos DB. This exercise will use the [Azure Database Migration Service](https://azure.microsoft.com/services/database-migration/) to migrate the data from the MongoDB database into Azure Cosmos DB.
+At this point, you have the web and API applications containerized. The next step is to migrate the MongoDB data over to Azure Cosmos DB. This exercise will use the Azure Database Migration Service to migrate the data from the MongoDB database into Azure Cosmos DB.
+
+> **Note:** in order to complete this Exercise the MongoDB container you ran on your lab VM in Exercise 1, Task 2 must still be running.
+
+### Help references
+
+|                                            |                                                                                           |
+| ------------------------------------------ | :---------------------------------------------------------------------------------------: |
+| **Description**                            | **Links**                                                                                 |
+| What is Azure Database Migration Service?  | https://docs.microsoft.com/azure/dms/dms-overview                                         |
+| Azure Cosmos DB's API for MongoDB          | https://docs.microsoft.com/azure/cosmos-db/mongodb-introduction |
+| Tutorial: Migrate MongoDB to Azure Cosmos DB's API for MongoDB offline using DMS | https://docs.microsoft.com/azure/dms/tutorial-mongodb-cosmos-db |
 
 ### Task 1: Enable Microsoft.DataMigration resource provider
 
-In this task, you will enable the use of the Azure Database Migration Service within your Azure subscription by registering the `Microsoft.DataMigration` resource provider.
+In this task, you will use Azure Database Migration Service within your Azure subscription by registering the `Microsoft.DataMigration` resource provider.
 
 1. Open the Azure Cloud Shell.
 
@@ -824,23 +744,18 @@ In this task, you will enable the use of the Azure Database Migration Service wi
 
 In this task, you will deploy an instance of the Azure Database Migration Service that will be used to migrate the data from MongoDB to Cosmos DB.
 
-1. From the Azure Portal, select **+ Create a resource**.
+1. Open the [Azure Portal Create Migration Service Blade](https://portal.azure.com/#create/Microsoft.AzureDMS).
 
-2. Search the marketplace for **Azure Database Migration Service** and select it.
-
-3. Select **Create**.
-
-    ![The screenshot shows the Azure Database Migration Service in the Azure Marketplace.](media/dms-marketplace-create.png "Azure Database Migration Service")
-
-4. On the **Basics** tab of the **Create Migration Service** pane, enter the following values:
+2. On the **Basics** tab of the **Create Migration Service** pane, enter the following values:
 
     - Resource group: Select the Resource Group created with this lab.
     - Migration service name: Enter a name, such as `fabmedical[SUFFIX]`.
     - Location: Choose the Azure Region used for the Resource Group.
+    - Service mode: leave **Azure** selected.
 
     ![The screenshot shows the Create Migration Service Basics tab with all values entered.](media/dms-create-basics.png "Create Migration Basics Tab")
 
-5. Select **Next: Networking >>**.
+3. Select **Next: Networking >>**.
 
 6. On the **Networking** tab, select the **Virtual Network** within the `fabmedical-[SUFFIX]` resource group.
 
@@ -864,27 +779,29 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
     - Project name: `fabmedical`
     - Source server type: `MongoDB`
-    - Target server type: `CosmosDB (MongoDB API)`
+    - Target server type will be automatically set to: `CosmosDB (MongoDB API)`
     - Choose type of activity: `Offline data migration`
 
     ![The screenshot shows the New migration project pane with values entered.](media/dms-new-migration-project.png "New migration project pane")
 
     > **Note:** The **Offline data migration** activity type is selected since you will be performing a one-time migration from MongoDB to Cosmos DB. Also, the data in the database won't be updated during the migration. In a production scenario, you will want to choose the migration project activity type that best fits your solution requirements.
 
-4. On the **MongoDB to Azure Database for CosmosDB Offline Migration Wizard** pane, enter the following values for the **Select source** tab:
+4. Select **Create and run activity**. Wait while the job is created and you will be redirected to the migration wizard.
+
+5. On the **MongoDB to Azure Database for CosmosDB Offline Migration Wizard** pane, enter the following values for the **Select source** tab:
 
     - Mode: **Standard mode**
-    - Source server name: Enter the Private IP Address of the Build Agent VM used in this lab.
+    - Source server name: Enter the Private IP Address of the lab VM running your MongoDB Containers.
     - Server port: `27017`
     - Require SSL: Unchecked
 
-    > **Note:** Leave the **User Name** and **Password** blank as the MongoDB instance on the Build Agent VM for this lab does not have authentication turned on. The Azure Database Migration Service is connected to the same VNet as the Build Agent VM, so it's able to communicate within the VNet directly to the VM without exposing the MongoDB service to the Internet. In production scenarios, you should always have authentication enabled on MongoDB.
+    > **Note:** Leave the **User Name** and **Password** blank as the MongoDB instance on the Build Agent VM for this lab does not have authentication turned on. The Azure Database Migration Service is connected to the same VNet as the lab VM, so it's able to communicate within the VNet directly to the VM without exposing the MongoDB service to the Internet. In production scenarios, you should always have authentication enabled on MongoDB.
 
     ![Select source tab with values selected for the MongoDB server.](media/dms-select-source.png "MongoDB to Azure Database for CosmosDB - Select source")
 
-5. Select **Next: Select target >>**.
+5. Select **Next: Select target >>**. This may take some time to complete as the Migration Service attempts to connect to the MongoDB instance on the lab VM.
 
-6. On the **Select target** pane, select the following values:
+6. On the **Select target** tab, select the following values:
 
     - Mode: **Select Cosmos DB target**
 
@@ -895,10 +812,6 @@ In this task, you will create a **Migration project** within Azure Database Migr
     ![The Select target tab with values selected.](media/dms-select-target.png "MongoDB to Azure Database for CosmosDB - Select target")
 
     Notice, the **Connection String** will automatically populate with the Key for your Azure Cosmos DB instance.
-
-7. Modify the **Connection string** by replacing `@undefined:` with `@fabmedical-[SUFFIX].documents.azure.com:` so the DNS name matches the Azure Cosmos DB instance. Be sure to replace the `[SUFFIX]`.
-
-    ![The screenshot shows the Connection string with the @undefined: value replaced with the correct DNS name.](media/dms-select-target-connection-string.png "Setting the Connection string")
 
 8. Select **Next: Database setting >>**.
 
@@ -914,7 +827,7 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
 12. Select **Next: Migration summary >>**.
 
-13. On the **Migration summary** tab, enter `Migrate Data` in the **Activity name** field, then select **Start migration** to initiate the migration of the MongoDB data to Azure Cosmos DB.
+13. On the **Migration summary** tab, enter `MigrateData` (no spaces) in the **Activity name** field, then select **Start migration** to initiate the migration of the MongoDB data to Azure Cosmos DB.
 
     ![The screenshot shows the Migration summary is shown with MigrateData entered in the Activity name field.](media/dms-migration-summary.png "Migration summary")
 
@@ -1051,7 +964,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
    ![This is a screenshot of the Kubernetes management dashboard that shows an error with the replica set, and ellipse menu with Logs option highlighted.](media/Ex2-Task1.5.png "Investigate logs")
 
-6. The log indicates that the content-api application is once again failing because it cannot find a mongodb api to communicate with. You will resolve this issue by connecting to Cosmos DB.
+6. The log indicates that the content-api application is once again failing because it cannot find a MongoDB api to communicate with. You will resolve this issue by connecting to Cosmos DB.
 
    ![This screenshot of the Kubernetes management dashboard shows logs output for the api container.](media/Ex2-Task1.6.png "MongoDB communication error")
 
@@ -1151,7 +1064,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
       kubectl create -f api.deployment.yml
       ```
 
-20. Select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to mongodb.
+20. Select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to MongoDB.
 
     ![This is a screenshot of the Kubernetes management dashboard showing logs output.](media/Ex2-Task1.19.png "API Logs")
 

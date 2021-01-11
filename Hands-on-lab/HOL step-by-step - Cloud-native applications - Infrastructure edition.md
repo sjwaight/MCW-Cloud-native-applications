@@ -148,7 +148,7 @@ The purpose of this task is to make sure you can run the application successfull
    docker network create fabmedical
    ```
 
-3. Run an instance of mongodb to use for local testing.
+3. Run an instance of MongoDB to use for local testing.
 
    ```bash
    docker container run --name mongo --net fabmedical -p 27017:27017 -d mongo:4.0
@@ -176,7 +176,7 @@ The purpose of this task is to make sure you can run the application successfull
    quit()
    ```
 
-   ![This screenshot of the console window shows the output from connecting to mongo.](media/Ex1-Task1.5.png "Connect to mongodb")
+   ![This screenshot of the console window shows the output from connecting to mongo.](media/Ex1-Task1.5.png "Connect to MongoDB")
 
 6. To initialize the local database with test content, first navigate to the content-init directory and run npm install.
 
@@ -342,9 +342,7 @@ In this task, you will browse to the web application for testing.
 
 In this task, you will create Docker images for the application --- one for the API application and another for the web application. Each image will be created via Docker commands that rely on a Dockerfile.
 
-1. From cloud shell connected to the build agent VM, type the following command
-   to view any Docker images on the VM. The list will only contain the mongodb
-   image downloaded earlier.
+1. From cloud shell connected to the build agent VM, type the following command to view any Docker images on the VM. The list will only contain the MongoDB image downloaded earlier.
 
    ```bash
    docker image ls
@@ -422,7 +420,7 @@ In this task, you will create Docker images for the application --- one for the 
 
 ### Task 4: Run a containerized application
 
-The web application container will be calling endpoints exposed by the API application container and the API application container will be communicating with mongodb. In this exercise, you will launch the images you created as containers on the same bridge network you created when starting mongodb.
+The web application container will be calling endpoints exposed by the API application container and the API application container will be communicating with MongoDB. In this exercise, you will launch the images you created as containers on the same bridge network you created when starting MongoDB.
 
 1. Create and start the API application container with the following command. The command does the following:
 
@@ -438,7 +436,7 @@ The web application container will be calling endpoints exposed by the API appli
    docker container run --name api --net fabmedical -p 3001:3001 content-api
    ```
 
-2. The `docker container run` command has failed because it is configured to connect to mongodb using a localhost URL. However, now that content-api is isolated in a separate container, it cannot access mongodb via localhost even when running on the same docker host. Instead, the API must use the bridge network to connect to mongodb.
+2. The `docker container run` command has failed because it is configured to connect to MongoDB using a localhost URL. However, now that content-api is isolated in a separate container, it cannot access MongoDB via localhost even when running on the same docker host. Instead, the API must use the bridge network to connect to MongoDB.
 
    ```text
       > content-api@0.0.0 start
@@ -461,14 +459,14 @@ The web application container will be calling endpoints exposed by the API appli
    npm ERR!     /root/.npm/_logs/2020-11-23T03_04_12_948Z-debug.log
    ```
 
-3. The content-api application allows an environment variable to configure the mongodb connection string. Remove the existing container, and then instruct the docker engine to set the environment variable by adding the `-e` switch to the `docker container run` command. Also, use the `-d` switch to run the api as a daemon.
+3. The content-api application allows an environment variable to configure the MongoDB connection string. Remove the existing container, and then instruct the docker engine to set the environment variable by adding the `-e` switch to the `docker container run` command. Also, use the `-d` switch to run the api as a daemon.
 
    ```bash
    docker container rm api
    docker container run --name api --net fabmedical -p 3001:3001 -e MONGODB_CONNECTION=mongodb://mongo:27017/contentdb -d content-api
    ```
 
-4. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to mongodb.
+4. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to MongoDB.
 
    ```bash
    docker container ls
@@ -505,7 +503,7 @@ The web application container will be calling endpoints exposed by the API appli
 
 ### Task 5: Setup environment variables
 
-In this task, you will configure the `web` container to communicate with the API container using an environment variable, similar to the way the mongodb connection string is provided to the api.
+In this task, you will configure the `web` container to communicate with the API container using an environment variable, similar to the way the MongoDB connection string is provided to the api.
 
 1. From cloud shell connected to the build agent VM, stop and remove the web container using the following commands.
 
@@ -609,7 +607,7 @@ In this task, you will configure the `web` container to communicate with the API
 
 ### Task 6: Push images to Azure Container Registry
 
-To run containers in a remote environment, you will typically push images to a Docker registry, where you can store and distribute images. Each service will have a repository that can be pushed to and pulled from with Docker commands. Azure Container Registry (ACR) is a managed private Docker registry service based on Docker Registry v2.
+
 
 In this task, you will push images to your ACR account, version images with tagging, and setup continuous integration (CI) to build future versions of your containers and push them to ACR automatically.
 
@@ -706,8 +704,9 @@ In this task, you will push images to your ACR account, version images with tagg
 
 ### Task 7: Setup CI Pipeline to Push Images
 
-In this task, you will use YAML to define a GitHub Actions workflow that builds your Docker
-image and pushes it to your ACR instance automatically.
+In this task, you will define GitHub Actions that build your Docker images and push them to your Azure Container Registry instance automatically.
+
+To run containers in a remote environment, you will typically push images to a Docker registry, where you can store and distribute images. Each service will have a repository that can be pushed to and pulled from with Docker commands. Azure Container Registry (ACR) is a managed private Docker registry service based on Docker Registry v2.
 
 1. In GitHub, return to the **Fabmedical** repository screen, and select the **Settings** tab.
 
@@ -1100,7 +1099,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
     ![This is a screenshot of the Kubernetes management dashboard that shows an error with the replica set, and ellipse menu with Logs option highlighted.](media/Ex2-Task1.5.png "Investigate logs")
 
-6. The log indicates that the content-api application is once again failing because it cannot find a mongodb api to communicate with. You will resolve this issue by connecting to Cosmos DB.
+6. The log indicates that the content-api application is once again failing because it cannot find a MongoDB api to communicate with. You will resolve this issue by connecting to Cosmos DB.
 
    ![This screenshot of the Kubernetes management dashboard shows logs output for the api container.](media/Ex2-Task1.6.png "MongoDB communication error")
 
@@ -1200,7 +1199,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
       kubectl create -f api.deployment.yml
       ```
 
-20. Select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to mongodb.
+20. Select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to MongoDB.
 
     ![This is a screenshot of the Kubernetes management dashboard showing logs output.](media/Ex2-Task1.19.png "API Logs")
 
