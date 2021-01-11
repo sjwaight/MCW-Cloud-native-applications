@@ -845,26 +845,36 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
 In this exercise, you will connect to the Azure Kubernetes Service cluster you created before the hands-on lab and deploy the containerized application to the cluster.
 
+### Help references
+
+|                                            |                                                                                           |
+| ------------------------------------------ | :---------------------------------------------------------------------------------------: |
+| **Description**                            | **Links**                                                                                 |
+| Overview of kubectl                        | https://kubernetes.io/docs/reference/kubectl/overview                                     |
+| Kubernetes: Using RBAC Authorization       | https://kubernetes.io/docs/reference/access-authn-authz/rbac/ |
+
 ### Task 1: Tunnel into the Azure Kubernetes Service cluster
 
-In this task, you will gather the information you need about your Azure Kubernetes Service cluster to connect to the cluster and execute commands to connect to the Kubernetes management dashboard from cloud shell.
+In this task, you will gather the information you need about your Azure Kubernetes Service (AKS) cluster to connect to the cluster and execute commands to connect to the Kubernetes management dashboard from Azure Cloud Shell.
 
-> **Note**: The following tasks should be executed in cloud shell and not the build machine, so disconnect from build machine if still connected.
+Azure Cloud Shell has many common utilities, including kubectl already installed. Kubectl is the native Kubernetes command-line management tool which can be used with any Kubernetes cluster. 
 
-1. Verify that you are connected to the correct subscription with the following command to show your default subscription:
+> **Note**: The following tasks should be executed in Azure Cloud Shell and not the lab VM.
+
+1. Verify that you are connected to the correct Azure subscription with the following command to show your default subscription:
 
    ```bash
    az account show
    ```
 
-   - If you are not connected to the correct subscription, list your subscriptions and then set the subscription by its id with the following commands (similar to what you did in cloud shell before the lab):
+   - If you are not connected to the correct subscription, list your subscriptions and then set the subscription by its id with the following commands (similar to what you did in Azure Cloud Shell before the lab):
 
    ```bash
    az account list
    az account set --subscription {id}
    ```
 
-2. Configure kubectl to connect to the Kubernetes cluster:
+2. Download connection profile so that kubectl can connect to your AKS cluster:
 
    ```bash
    az aks get-credentials -a --name fabmedical-SUFFIX --resource-group fabmedical-SUFFIX
@@ -914,6 +924,8 @@ In this task, you will gather the information you need about your Azure Kubernet
 
    ![In this screenshot of the console, the output of the az aks browse command.](media/image76.png "az aks browse command output")
 
+   > **Note:** you can open the dashboard by clicking on the URL in the Cloud Shell.
+
 7. If the tunnel is successful, you will see the Kubernetes Dashboard authentication screen. Select the **Kubeconfig** option, select the ellipsis (`...`) button, select the **Kubeconfig** file that was previously downloaded, then select **Sign in**.
 
     ![The screenshot shows the Kubernetes Dashboard authentication prompt.](media/kubernetes-dashboard-kubeconfig-prompt.png "Kubernetes Dashboard authentication prompt")
@@ -932,21 +944,23 @@ In this task, you will gather the information you need about your Azure Kubernet
 
 In this task, you will deploy the API application to the Azure Kubernetes Service cluster using the Kubernetes dashboard.
 
-1. From the Kubernetes dashboard, select **Create** in the top right corner.
+1. From the Kubernetes dashboard, select **+ Create** in the top right corner.
 
 2. From the Resource creation view, select **Create from form**.
 
-   ![This is a screenshot of the Deploy a Containerized App dialog box. Specify app details below is selected, and the fields have been filled in with the information that follows. At the bottom of the dialog box is a SHOW ADVANCED OPTIONS link.](media/image78.png "Display Create from form")
-
    - Enter `api` for the App name.
 
-   - Enter `[LOGINSERVER]/content-api` for the Container Image, replacing `[LOGINSERVER]` with your ACR login server, such as `fabmedicalsol.azurecr.io`.
+   - Enter `[LOGINSERVER]/content-api` for the Container Image, replacing `[LOGINSERVER]` with your Azure Container Registry login server, such as `fabmedicalsol.azurecr.io`.
 
    - Set Number of pods to `1`.
 
    - Set Service to `Internal`.
 
-   - Use `3001` for Port and `3001` for Target port.
+   - Use `3001` for Port and `3001` for Target port and leave `TCP`.
+
+
+   ![This is a screenshot of the Deploy a Containerized App dialog box. Specify app details below is selected, and the fields have been filled in with the information that follows. At the bottom of the dialog box is a SHOW ADVANCED OPTIONS link.](media/image78.png "Display Create from form")
+
 
 3. Select **SHOW ADVANCED OPTIONS**
 
@@ -968,7 +982,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
    ![This screenshot of the Kubernetes management dashboard shows logs output for the api container.](media/Ex2-Task1.6.png "MongoDB communication error")
 
-7. Open the Azure portal in your browser and navigate to your resource group and find your Cosmos DB resource. Select the Cosmos DB resource to view details.
+7. Open the Azure Portal in your browser and navigate to your resource group and find your Cosmos DB resource. Select the Cosmos DB resource to view details.
 
    ![This is a screenshot of the Azure Portal showing the Cosmos DB among existing resources.](media/Ex2-Task1.9.png "Select CosmosDB resource from list")
 
@@ -976,7 +990,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
    ![This is a screenshot of the Azure Portal showing the quick start for setting up Cosmos DB with MongoDB API. The copy button is highlighted.](media/Ex2-Task1.10.png "Capture CosmosDB connection string")
 
-9. Update the provided connection string with a database `contentdb` and a replica set `globaldb`.
+9. Modify the copied connection string by adding the database `contentdb` to the URL, along with a replicaSet of `globaldb`. The resulting connection string should look like the below sample.
 
    > **Note**: Username and password redacted for brevity.
 
@@ -984,7 +998,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
    mongodb://<USERNAME>:<PASSWORD>@fabmedical-<SUFFIX>.documents.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb
    ```
 
-10. To avoid disconnecting from the Kubernetes dashboard, open a **new** Azure Cloud Shell console.
+10. To avoid disconnecting from the Kubernetes dashboard, open a **new** Azure Cloud Shell console (you can use a full screen version by opening https://shell.azure.com/).
 
     ![This is a screenshot of the cloud shell window with a red arrow pointing at the "Open new session" button on the toolbar.](media/hol-2019-10-19_06-13-34.png "Open new Azure Cloud Shell console")
 
@@ -998,9 +1012,9 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
     ![This is a screenshot of the Azure cloud shell window showing the command to create the base64 encoded secret.  The output to copy is highlighted.](media/hol-2019-10-18_07-12-13.png "Show encoded secret")
 
-12. Return to the Kubernetes UI in your browser and select **+ Create**.
+12. Return to the Kubernetes Dashboard UI in your browser and select **+ Create**.
 
-13. In the **Create from input** tab, update the following YAML with the encoded connection string from your clipboard, paste the YAML data into the create dialog, and choose **Upload**.
+13. In the **Create from input** tab, update the following YAML with the encoded connection string from your clipboard, paste the YAML data into the create dialog, and choose **Upload**. Note that YAML is position sensitive so you must ensure indentation is correct when typing or pasting.
 
     ```yaml
     apiVersion: v1
@@ -1064,7 +1078,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
       kubectl create -f api.deployment.yml
       ```
 
-20. Select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to MongoDB.
+20. In the Kubernetes Dashboard select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to MongoDB.
 
     ![This is a screenshot of the Kubernetes management dashboard showing logs output.](media/Ex2-Task1.19.png "API Logs")
 
