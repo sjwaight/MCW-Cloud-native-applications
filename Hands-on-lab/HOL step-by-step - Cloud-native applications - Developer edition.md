@@ -573,7 +573,7 @@ In this task, you will configure the Web container so that it can use an environ
 
 ### Task 5: Setup Continous Integration Pipeline to Build and Push Images
 
-To run containers in a remote environment, you will typically push images to a Container Registry, where you can store and distribute images. In our scenario each service (web and API) will have a repository no a Registry that can be pushed to and pulled from using standard Docker commands. We will use Azure Container Registry (ACR) which is a managed private Docker registry service based on Docker Registry v2.
+To run containers in a remote environment, you will typically push images to a Container Registry, where you can store and distribute images. In our scenario each service (web and API) will have a repository in a Registry that can be pushed to and pulled from using standard Docker commands. We will use Azure Container Registry (ACR) which is a managed private Docker registry service based on Docker Registry v2.
 
 In this task, you will use GitHub Actions to build your Docker images and pushes them to your ACR instance automatically.
 
@@ -839,11 +839,21 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
     ![The screenshot shows the Cosmos DB is open in the Azure Portal with Data Explorer open showing the data has been migrated.](media/dms-confirm-data-in-cosmosdb.png "Cosmos DB is open")
 
+16. We need to create a new index in Cosmos DB for the `startTime` property for documents in the `sessions` collection to avoid errors in our web application. Select **Scale & Settings** for the `sessions` collection and then define a new Index Policy as shown.
+
+   - Set **Defintion** to **startTime** (note: case sensitive).
+   - Set **Type** to **Single Field**.
+   - Select **Save** to save the new Policy.
+
+   ![The screenshot shows the Cosmos DB Index Policy screen is open in the Azure Portal.](media/sessions-index.png "Cosmos DB edit Index Policy")
+
 ## Exercise 3: Deploy the solution to Azure Kubernetes Service
 
 **Duration**: 30 minutes
 
 In this exercise, you will connect to the Azure Kubernetes Service cluster you created before the hands-on lab and deploy the containerized application to the cluster.
+
+> **Note:** many Kubernetes Dashboard activities (creating or viewing deployments, services, node pools, etc) you can now use the AKS blades in the Azure Portal if you wish.
 
 ### Help references
 
@@ -852,6 +862,8 @@ In this exercise, you will connect to the Azure Kubernetes Service cluster you c
 | **Description**                            | **Links**                                                                                 |
 | Overview of kubectl                        | https://kubernetes.io/docs/reference/kubectl/overview                                     |
 | Kubernetes: Using RBAC Authorization       | https://kubernetes.io/docs/reference/access-authn-authz/rbac/ |
+| Kubernetes: Services                       | https://kubernetes.io/docs/concepts/services-networking/service/ |
+| Introduction to Helm                       | https://helm.sh/docs/intro/ |
 
 ### Task 1: Tunnel into the Azure Kubernetes Service cluster
 
@@ -1084,7 +1096,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
 ### Task 3: Deploy a service using kubectl
 
-In this task, deploy the web service using `kubectl`.
+In this task, deploy the web application and expose it to the Internet via a Kubernetes LoadBalancer service. You will be using the Kubernetes command line `kubectl` to complete these steps.
 
 1. Open a **new** Azure Cloud Shell console.
 
@@ -1156,7 +1168,7 @@ In this task, deploy the web service using `kubectl`.
            terminationGracePeriodSeconds: 30
    ```
 
-4. Update the `[LOGINSERVER]` entry to match the name of your ACR Login Server.
+4. Update the `[LOGINSERVER]` entry to match the name of your Azure Container Registry Login Server.
 
 5. Select the **...** button and choose **Save**.
 
@@ -1214,15 +1226,13 @@ In this task, deploy the web service using `kubectl`.
 
     ![In the Kubernetes management dashboard, Services is selected below Discovery and Load Balancing in the navigation menu. At right are three boxes that display various information about the web service deployment: Details, Pods, and Events.](media/image94.png "Display External Endpoint")
 
-14. In the top navigation, select the `speakers` and `sessions` links. Note that no data is displayed, although we have connected to our Cosmos DB instance, there is no data loaded. You will resolve this by running the content-init application as a Kubernetes Job in Task 5.
+14. In the top navigation, select the `speakers` and `sessions` links.
 
     ![A screenshot of the web site showing no data displayed.](media/Ex2-Task3.11.png "Web site home page")
 
 ### Task 4: Deploy a service using a Helm chart
 
-In this task, you will deploy the web service using a [Helm](https://helm.sh/) chart to streamline the installing and managing the container-based application on the Azure Kubernetes cluster.
-
-You will configure a Helm Chart that will be used to deploy and configure the **content-web** container image to Kubernetes. This is a technique that can be used to more easily deploy and manage the application on the Azure Kubernetes Cluster.
+In this task, you will deploy the **content-web** service using a [Helm](https://helm.sh/) chart to streamline the installing and managing the container-based application on the AKS cluster.
 
 1. From the Kubernetes dashboard, under **Workloads**, select **Deployments**.
 
@@ -1236,18 +1246,19 @@ You will configure a Helm Chart that will be used to deploy and configure the **
 
    ![A screenshot of the Kubernetes management dashboard showing how to delete a deployment.](media/Ex2-Task4.4.png "Kubernetes delete deployment")
 
-5. Open a **new** Azure Cloud Shell console.
+5. Open a **new** Azure Cloud Shell.
 
-6. Update your starter files by pulling the latest changes from the Git repository:
+6. Clone your fabmedical repository (replace URL with URL of your repository):
 
     ```bash
-    cd ~/MCW-Cloud-native-applications/Hands-on\ lab/lab-files/developer/content-web
-    git pull
+    git clone https://github.com/USER_NAME/fabmedical.git
     ```
 
-7. We will use the `helm create` command to scaffold out a chart implementation that we can build on. Use the following commands to create a new chart named `web` in a new directory:
+7. We will use the `helm create` command to scaffold out a chart implementation that we can build on. Use the following commands to create a new chart named `web` in a new directory (replace 'fabmedical' with the directory created by your clone):
 
     ```bash
+    cd fabmedical
+    cd content-web
     mkdir charts
     cd charts
     helm create web
@@ -1283,7 +1294,7 @@ You will configure a Helm Chart that will be used to deploy and configure the **
       port: 80
     ```
 
-12. Search for the `resources` definition and update the values so that they match the following. You are removing the curly braces and adding the `requests`:
+12. Search for the `resources` definition and update the values so that they match the following. You are removing the curly braces and adding the `requests` (make sure to remove the {} characters after the `resource:` node):
 
     ```yaml
     resources:
@@ -1378,7 +1389,7 @@ You will configure a Helm Chart that will be used to deploy and configure the **
 
 22. Save changes and close the editor.
 
-23. The chart is now setup to run our web container. Type the following command to deploy the application described by the YAML files. You will receive a message indicating that helm has created a web deployment and a web service.
+23. The chart is now setup to deploy our web container. Type the following command to deploy the application described by the Helm chart. You will receive a message indicating that helm has created a web deployment and a web service.
 
     ```bash
     cd ../..
@@ -1391,16 +1402,14 @@ You will configure a Helm Chart that will be used to deploy and configure the **
 
     ![In the Kubernetes management dashboard, Services is selected below Discovery and Load Balancing in the navigation menu. At right are three boxes that display various information about the web service deployment: Details, Pods, and Events. "External endpoints" is highlighted to show that an external endpoint has been created.](media/image94.png "Web service endpoint")
 
-25. Select the speakers and sessions links. Note that no data is displayed, although we have connected to our Cosmos DB instance, there is no data loaded. You will resolve this by running the content-init application as a Kubernetes Job.
+25. Select the speakers and sessions links and check that content is displayed for each.
 
     ![A screenshot of the web site showing no data displayed.](media/Ex2-Task3.11.png "Web site home page")
 
-26. We will now persist the changes into the repository. Execute the following commands:
+26. We will now commit our Helm chart to our GitHubs repository. Execute the following commands in the root folder of your 'fabmedical' clone:
 
     ```bash
-    cd ..
-    git pull
-    git add charts/
+    git add content-web/charts/
     git commit -m "Helm chart added."
     git push
     ```
@@ -1423,14 +1432,15 @@ In this task, you will verify that you can browse to the web service you have de
 
 ### Task 6: Configure Continuous Delivery to the Kubernetes Cluster
 
-In this task, you will use GitHub Actions workflows to automate the process for deploying the web image to the AKS cluster. You will update the workflow and configure a job so that when new images are pushed to the ACR, the pipeline deploys the image to the AKS cluster.
+In this task, you will use GitHub Actions to automate the process for deploying the web image to the AKS cluster using Helm. You will update the GitHub Action and configure a job so that when new images are pushed to the Azure Container Registry (ACR), the pipeline deploys the image to the AKS cluster. ACR can also host Helm charts.
 
-1. Navigate to the `.github/workflows` folder of the git repository, and open the `content-web.yml` workflow using `vi`:
+1. On your lab VM perform the following steps to edit the GitHub Action for the conent-web container. If you setup Visual Studio Code remote development you can also use that. Open or navigate to the folder where you originally created your fabmedical git repository (Task 7 of the 'Before the HOL' exercise).
 
-    ```bash
-    cd ~/MCW-Cloud-native-applications/Hands-on\ lab/lab-files/developer/.github/workflows
-    vi content-web.yml
-    ```
+   ```bash
+   git pull
+   cd .github/workflows
+   vi content-web.yml
+   ```
 
 2. You will add a second job to the bottom of the `content-web.yml` workflow. Paste the following at the end of the file:
 
@@ -1482,13 +1492,13 @@ In this task, you will use GitHub Actions workflows to automate the process for 
     cat ~/.kube/config
     ```
 
-5. In GitHub, return to the **Fabmedical** repository screen, select the **Settings** tab, select **Secrets** from the left menu, then select the **New secret** button.
+5. In GitHub, return to the **Fabmedical** repository, select the **Settings** tab, select **Secrets** from the left menu, then select the **New secret** button.
 
 6. Create a new GitHub Secret with the Name of `KUBECONFIG` and paste in the contents of the `~/.kube/config` file that was previously copied.
 
     ![The screenshot displays the KUBECONFIG secret](media/2020-08-25-22-34-04.png "Edit KUBECONFIG secret")
 
-7. Now return to edit the `content-web.yml` workflow and paste the following at the end of the file.
+7. On your lab VM edit the `content-web.yml` workflow and paste the following at the end of the file.
 
     > **Note**: Be careful to check your indenting when pasting. The `aks-deployment` node should be indented with 2 spaces and line up with the node for the `build-and-push-helm-chart` job.
 
@@ -1579,7 +1589,7 @@ In this task, you will access and review the various logs and dashboards made av
 
    ![In this screenshot, the pod cpu usage details are shown.](media/monitor_4.png "POD CPU details")
 
-8. To display the logs for any container simply select it and view the right panel and you will find "View container logs" option which will list all logs for this specific container.
+8. To display the logs for any container simply select it and view the right panel and you will find the **View container logs** option which will list all logs for this specific container.
 
    ![In the View in Analytics dropdown, the View container logs item is selected.](media/monitor_5.png "View container logs menu option")
 
@@ -1599,31 +1609,27 @@ At this point, you have deployed a single instance of the web and API service co
 
 In this task, you will increase the number of instances for the API deployment in the Kubernetes management dashboard. While it is deploying, you will observe the changing status.
 
-1. Switch to the Kubernetes Dashboard.
+1. Switch to the Kubernetes Dashboard. See Exerise 3, Task 1 if you need to create a Tunnel to access it again.
 
 2. From the navigation menu, select **Workloads** -\> **Deployments**, and then select the **API** deployment.
 
-3. Select the **SCALE** button in the upper-right.
+3. Select the **SCALE** button in the upper-right. Change the number of replicas to **2**, and then select **Scale**.
 
-   ![In the Workloads > Deployments > api bar, the Scale icon is highlighted.](media/image89.png "Scale a resource")
-
-4. Change the number of replicas to **2**, and then select **Scale**.
-
-   ![In the Scale a Deployment dialog box, 2 is entered in the Desired number of pods box.](media/image116.png "Scale a Deployment dialog")
+   ![In the Scale a Deployment dialog box, 2 is entered in the Desired number of pods box.](media/k8s-deploy-scale.png "Scale a Deployment dialog")
 
    > **Note**: If the deployment completes quickly, you may not see the deployment Waiting states in the dashboard, as described in the following steps.
 
-5. From the Replica Set view for the API, you will see it is now deploying and that there is one healthy instance and one pending instance.
+3. From the Replica Set view for the API, you will see it is now deploying and that there is one healthy instance and one pending instance.
 
    ![Replica Sets is selected under Workloads in the navigation menu on the left, and at right, Pods status: 1 pending, 1 running is highlighted. Below that, a red arrow points at the API deployment in the Pods box.](media/image117.png "View replica details")
 
-6. From the navigation menu, select **Deployments** from the list. Note that the api service has a pending status indicated by the grey timer icon, and it shows a pod count 1 of 2 instances (shown as `1/2`).
+4. From the navigation menu, select **Deployments** from the list. Note that the api service has a pending status indicated by the grey timer icon, and it shows a pod count 1 of 2 instances (shown as `1/2`).
 
    ![In the Deployments box, the api service is highlighted with a grey timer icon at left and a pod count of 1/2 listed at right.](media/image118.png "View api active pods")
 
-   > **Note**: If you receive an error about insufficient CPU, that is expected.
+   > **Note**: If you receive an error about insufficient CPU that is OK. We will see how to deal with this in the next Task.
 
-7. From the Navigation menu, select **Workloads**. From this view, note that the health overview in the right panel of this view. You will see the following:
+5. From the Navigation menu, select **Workloads**. From this view, note that the health overview in the right panel of this view. You will see the following:
 
    - One deployment and one replica set are each healthy for the api service.
 
@@ -1631,7 +1637,7 @@ In this task, you will increase the number of instances for the API deployment i
 
    - Three pods are healthy.
 
-8. Navigate to the web application from the browser again. The application should still work without errors as you navigate to Speakers and Sessions pages.
+6. Navigate to the web application from the browser again. The application should still work without errors as you navigate to Speakers and Sessions pages.
 
    - Navigate to the `/stats` page. You will see information about the environment including:
 
@@ -1655,15 +1661,13 @@ In this task, you will increase the number of instances for the API deployment i
 
 In this task, you will try to increase the number of instances for the API service container beyond available resources in the cluster. You will observe how Kubernetes handles this condition and correct the problem.
 
-1. From the navigation menu, select **Deployments**. From this view, select the **api** deployment.
+1. From the navigation menu, select **Deployments**. From this view, for the api deployment, select the vertical ellipses on the right of the screen and then select **Edit**.
 
-2. Configure the deployment to use a fixed host port for initial testing. Select the vertical ellipses and then select **Edit**.
-
-3. In the Edit a resource dialog, select the YAML tab. You will see a list of settings shown in YAML format. Use the copy button to copy the text to your clipboard.
+2. In the Edit a resource dialog, select the YAML tab. You will see a list of settings shown in YAML format. Use the copy button to copy the text to your clipboard.
 
    ![Screenshot of the Edit a resource dialog box that displays JSON data.](media/api-deployment-edit.PNG "Edit a resource YAML config")
 
-4. Paste the contents into the text editor of your choice (such as Notepad on Windows, macOS users can use TextEdit).
+3. Paste the contents into the text editor of your choice (such as Visual Studio Code).
 
 5. Scroll down about halfway to find the node `$.spec.template.spec.containers[0]`, as shown in the screenshot below.
 
@@ -1789,7 +1793,7 @@ In this task, you will setup Autoscale on Azure Cosmos DB.
 
 In this task, you will run a performance test script that will test the Autoscale feature of Azure Cosmos DB so you can see that it will now scale greater than 400 RU/s.
 
-1. In the Azure Portal, navigate to the `fabmedical-[SUFFIX]` **Cosmos DB account**.
+1. In the Azure Portal, navigate to the `fabmedical-[SUFFIX]` **Cosmos DB Account**.
 
 2. Select **Connection String** under **Settings**.
 
@@ -1797,15 +1801,13 @@ In this task, you will run a performance test script that will test the Autoscal
 
     ![The Cosmos DB account Connection String pane with the fields to copy highlighted.](media/cosmos-connection-string-pane.png "View CosmosDB connection string")
 
-4. Open the Azure Cloud Shell, and **SSH** to the **Build agent VM**.
-
-5. On the **Build agent VM**, navigate to the `~/Fabmedical` directory.
+4. On your lab VM navigate to the location you cloned your `fabmedical` repository.
 
     ```bash
     cd ~/Fabmedical
     ```
 
-6. Run the following command to open the `perftest.sh` script for editing in Vim.
+6. Open the `perftest.sh` script for editing in Vim (or Visual Studio Code remote if you have it installed)
 
     ```bash
     vi perftest.sh
@@ -1839,7 +1841,7 @@ In this task, you will run a performance test script that will test the Autoscal
 
 **Duration**: 1 hour
 
-In the previous exercise, we introduced a restriction to the scale properties of the service. In this exercise, you will configure the api deployments to create pods that use dynamic port mappings to eliminate the port resource constraint during scale activities.
+In the previous exercise with Kubernetes, we introduced a restriction to the scale properties of the service. In this exercise, you will configure the api deployment to create pods that use dynamic port mappings to eliminate the port resource constraint during scale activities.
 
 Kubernetes services can discover the ports assigned to each pod, allowing you to run multiple instances of the pod on the same agent node --- something that is not possible when you configure a specific static port (such as 3001 for the API service).
 
@@ -1847,15 +1849,15 @@ Kubernetes services can discover the ports assigned to each pod, allowing you to
 
 In this task, we will reconfigure the API deployment so that it will produce pods that choose a dynamic hostPort for improved scalability.
 
-1. From the navigation menu select **Deployments** under **Workloads**. From the view's Deployments list, select the **API** deployment.
+1. In the Kubernetes Dashboard, on the navigation menu select **Deployments** under **Workloads**. From the eployments list, select the **API** deployment.
 
 2. Select **Edit**.
 
-3. From the **Edit a Deployment** dialog, do the following:
+3. From the **Edit a resource** dialog, do the following:
 
    - Scroll to the first spec node that describes replicas as shown in the screenshot. Set the value for replicas to `4`.
 
-   - Within the replicas spec, beneath the template node, find the **api** containers spec. Remove the `hostPort` entry for the API container's port mapping.  The screenshot below shows the desired configuration after editing.
+   - Within the replicas spec, beneath the template node, find the **api** containers spec. If it exists remove the `hostPort` entry for the API container's port mapping.  The screenshot below shows the desired configuration after editing.
 
    - Within the resources, beneath the template node, find the **cpu** under requests. Update this to `100m` so the **api** instances use less than a full CPU core.
 

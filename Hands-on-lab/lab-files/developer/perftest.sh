@@ -1,4 +1,4 @@
-host="fabmedical-[SUFFIX].documents.azure.com"
+host="fabmedical-[SUFFIX].mongo.cosmos.azure.com"
 username="fabmedical-[SUFFIX]"
 password="[PASSWORD]"
 dbname="contentdb"
