@@ -48,10 +48,10 @@ Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/int
     - [Task 5: Test the application in a browser](#task-5-test-the-application-in-a-browser)
     - [Task 6: Configure Continuous Delivery to the Kubernetes Cluster](#task-6-configure-continuous-delivery-to-the-kubernetes-cluster)
     - [Task 7: Review Azure Monitor for Containers](#task-7-review-azure-monitor-for-containers)
-  - [Exercise 4: Scale the application and test HA](#exercise-4-scale-the-application-and-test-ha)
+  - [Exercise 4: Scale the application and test High Availability](#exercise-4-scale-the-application-and-test-high-availability)
     - [Task 1: Increase service instances from the Kubernetes dashboard](#task-1-increase-service-instances-from-the-kubernetes-dashboard)
     - [Task 2: Increase service instances beyond available resources](#task-2-increase-service-instances-beyond-available-resources)
-    - [Task 3: Restart containers and test HA](#task-3-restart-containers-and-test-ha)
+    - [Task 3: Restart containers and test High Availability](#task-3-restart-containers-and-test-high-availability)
     - [Task 4: Configure Cosmos DB Autoscale](#task-4-configure-cosmos-db-autoscale)
     - [Task 5: Test Cosmos DB Autoscale](#task-5-test-cosmos-db-autoscale)
   - [Exercise 5: Working with services and routing application traffic](#exercise-5-working-with-services-and-routing-application-traffic)
@@ -857,13 +857,15 @@ In this exercise, you will connect to the Azure Kubernetes Service cluster you c
 
 ### Help references
 
-|                                            |                                                                                           |
-| ------------------------------------------ | :---------------------------------------------------------------------------------------: |
-| **Description**                            | **Links**                                                                                 |
-| Overview of kubectl                        | https://kubernetes.io/docs/reference/kubectl/overview                                     |
-| Kubernetes: Using RBAC Authorization       | https://kubernetes.io/docs/reference/access-authn-authz/rbac/ |
-| Kubernetes: Services                       | https://kubernetes.io/docs/concepts/services-networking/service/ |
-| Introduction to Helm                       | https://helm.sh/docs/intro/ |
+|                                                        |                                                                                       |
+| ------------------------------------------------------ | :-----------------------------------------------------------------------------------: |
+| **Description**                                        | **Links**                                                                             |
+| Overview of kubectl                                    | https://kubernetes.io/docs/reference/kubectl/overview                                 |
+| Kubernetes: Using RBAC Authorization                   | https://kubernetes.io/docs/reference/access-authn-authz/rbac/                         |
+| Kubernetes: Services                                   | https://kubernetes.io/docs/concepts/services-networking/service/                      |
+| Kubernetes: Connecting Applications with Services      | https://kubernetes.io/docs/concepts/services-networking/connect-applications-service/ |
+| Introduction to Helm                                   | https://helm.sh/docs/intro/                                                           |
+| Azure Monitor for containers overview                  | https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview   |
 
 ### Task 1: Tunnel into the Azure Kubernetes Service cluster
 
@@ -1599,11 +1601,19 @@ In this task, you will access and review the various logs and dashboards made av
 
    ![The container log query results are displayed, one log entry is expanded in the results view with its details shown.](media/monitor_7.png "Expand the results")
 
-## Exercise 4: Scale the application and test HA
+## Exercise 4: Scale the application and test High Availability
 
 **Duration**: 20 minutes
 
 At this point, you have deployed a single instance of the web and API service containers. In this exercise, you will increase the number of container instances for the web service and scale the front-end on the existing cluster.
+
+### Help references
+
+|                                            |                                                                    |
+| ------------------------------------------ | :----------------------------------------------------------------: |
+| **Description**                            | **Links**                                                          |
+| Overview of kubectl                        | https://kubernetes.io/docs/reference/kubectl/overview              |
+| Kubernetes: Services                       | https://kubernetes.io/docs/concepts/services-networking/service/   |
 
 ### Task 1: Increase service instances from the Kubernetes dashboard
 
@@ -1637,9 +1647,9 @@ In this task, you will increase the number of instances for the API deployment i
 
    - Three pods are healthy.
 
-6. Navigate to the web application from the browser again. The application should still work without errors as you navigate to Speakers and Sessions pages.
+6. Navigate to the Contoso Neuro Conference web application. The application should still work without errors as you navigate to Speakers and Sessions pages.
 
-   - Navigate to the `/stats` page. You will see information about the environment including:
+   - Navigate to the `/stats` page. You will see information about the hosting environment including:
 
      - **webTaskId:** The task identifier for the web service instance.
 
@@ -1663,7 +1673,7 @@ In this task, you will try to increase the number of instances for the API servi
 
 1. From the navigation menu, select **Deployments**. From this view, for the api deployment, select the vertical ellipses on the right of the screen and then select **Edit**.
 
-2. In the Edit a resource dialog, select the YAML tab. You will see a list of settings shown in YAML format. Use the copy button to copy the text to your clipboard.
+2. In the **Edit a resource** dialog, select the YAML tab. You will see a list of settings shown in YAML format. Use the copy button to copy the text to your clipboard.
 
    ![Screenshot of the Edit a resource dialog box that displays JSON data.](media/api-deployment-edit.PNG "Edit a resource YAML config")
 
@@ -1677,10 +1687,11 @@ In this task, you will try to increase the number of instances for the API servi
 
    - Add the following snippet below the `name` property in the container spec:
 
-   ```text
-     ports:
-	    containerPort: 3001
-	    hostPort: 3001
+   ```yaml
+      ports:
+         - hostPort: 3001
+           containerPort: 3001
+           protocol: TCP
    ```
 
    - Your container spec should now look like this:
@@ -1711,13 +1722,13 @@ In this task, you will try to increase the number of instances for the API servi
 
     > **Note**: This message indicates that there were not enough available resources to match the requirements for a new pod instance. In this case, this is because the instance requires port `3001`, and since there are only 2 nodes available in the cluster, only two api instances can be scheduled. The third and fourth pod instances will wait for a new node to be available that can run another instance using that port.
 
-12. Reduce the number of requested pods to `2` using the **Scale** button.
+12. Reduce the number of requested pods to `2` using the **Scale** button found on the vertical ellipses on the right of the screen for the `api` Deployment.
 
 13. Almost immediately, the warning message from the **Workloads** dashboard should disappear, and the **API** deployment will show `2/2` pods are running.
 
     ![Workloads is selected in the navigation menu. A green check mark now appears next to the api deployment listing in the Deployments box at right.](media/image122.png "Review pods list")
 
-### Task 3: Restart containers and test HA
+### Task 3: Restart containers and test High Availability
 
 In this task, you will restart containers and validate that the restart does not impact the running service.
 
@@ -1843,7 +1854,14 @@ In this task, you will run a performance test script that will test the Autoscal
 
 In the previous exercise with Kubernetes, we introduced a restriction to the scale properties of the service. In this exercise, you will configure the api deployment to create pods that use dynamic port mappings to eliminate the port resource constraint during scale activities.
 
-Kubernetes services can discover the ports assigned to each pod, allowing you to run multiple instances of the pod on the same agent node --- something that is not possible when you configure a specific static port (such as 3001 for the API service).
+Kubernetes services can discover the ports assigned to each pod, allowing you to run multiple instances of the pod on the same agent node --- something that is not possible when you configure a specific static port (such as the 3001 mapping for the API service that we put in place in the last Exercise).
+
+### Help references
+
+|                                            |                                                                    |
+| ------------------------------------------ | :----------------------------------------------------------------: |
+| **Description**                            | **Links**                                                          |
+| Use a public Standard Load Balancer in Azure Kubernetes Service (AKS) | https://docs.microsoft.com/azure/aks/load-balancer-standard              |
 
 ### Task 1: Scale a service without port constraints
 
@@ -1857,7 +1875,7 @@ In this task, we will reconfigure the API deployment so that it will produce pod
 
    - Scroll to the first spec node that describes replicas as shown in the screenshot. Set the value for replicas to `4`.
 
-   - Within the replicas spec, beneath the template node, find the **api** containers spec. If it exists remove the `hostPort` entry for the API container's port mapping.  The screenshot below shows the desired configuration after editing.
+   - Within the replicas spec, beneath the template node, find the **api** containers spec. Remove the `hostPort` entry for the API container's port mapping.  The screenshot below shows the desired configuration after editing.
 
    - Within the resources, beneath the template node, find the **cpu** under requests. Update this to `100m` so the **api** instances use less than a full CPU core.
 
@@ -1865,7 +1883,7 @@ In this task, we will reconfigure the API deployment so that it will produce pod
 
      ![This is a screenshot of the Edit a Resource dialog box with the cpu information set.](media/image137b.png "Updated cpu value shown")
 
-4. Select **Update**. New pods will now choose a dynamic port.
+4. Select **Update**. New pods will now choose a dynamic host port.
 
 5. The API service can now scale to 4 pods since it is no longer constrained to an instance per node and a full cpu core per instance -- a previous limitation while using port `3001`.
 
@@ -1879,9 +1897,9 @@ In this task, you will update the web service so that it supports dynamic discov
 
 1. From the navigation menu, select **Deployments** under **Workloads**. From the view's Deployments list, select the **web** deployment.
 
-2. Select **Edit**, then select the **JSON** tab.
+2. Select **Edit**, then in the **Edit a resource** dialog select the **JSON** tab.
 
-3. From the dialog, scroll to the web containers spec as shown in the screenshot. Remove the hostPort entry for the web container's port mapping.
+3. Scroll to the web containers spec as shown in the screenshot. Remove the hostPort entry for the web container's port mapping.
 
    ![This is a screenshot of the Edit a Deployment dialog box with various displayed information about spec, containers, ports, and env. The ports node, containerPort: 3001 and protocol: TCP are highlighted.](media/image140.png "Remove web container hostPort entry")
 
@@ -1903,7 +1921,7 @@ In this task, you will modify the CPU requirements for the web service so that i
 
 2. Select the vertical ellipses, then select **Edit**.
 
-3. From the Edit a Deployment dialog, select the **JSON** tab, then find the **cpu** resource requirements for the web container. Change this value to `125m`.
+3. From the **Edit a resource** dialog, select the **JSON** tab, then find the **cpu** resource requirements for the web container. Change this value to `125m`.
 
    ![This is a screenshot of the Edit a Deployment dialog box with various displayed information about ports, env, and resources. The resources node, with cpu: 125m selected, is highlighted.](media/image142.png "Change cpu value")
 
