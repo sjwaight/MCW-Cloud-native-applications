@@ -1871,6 +1871,7 @@ Kubernetes services can discover the ports assigned to each pod, allowing you to
 | What is Application Insights?                                         | https://docs.microsoft.com/azure/azure-monitor/app/app-insights-overview |
 | Kubernetes: Ingress                                                   | https://kubernetes.io/docs/concepts/services-networking/ingress/         |
 | Kubernetes: Ingress Controllers                                       | https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/ |
+| Kubernetes: cert-manager                                              | https://cert-manager.io/docs/installation/kubernetes/ |
 
 
 ### Task 1: Scale a service without port constraints
@@ -2048,36 +2049,40 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
     >
    ![A screenshot of Azure Cloud Shell showing the command output.](media/Ex4-Task5.5a.png "View the ingress controller LoadBalancer")
 
-6. Within the Azure Cloud Shell, create a script to update the public DNS name for the IP.
+6. Open the [Azure Portal Resource Groups blade](https://portal.azure.com/?feature.customPortal=false#blade/HubsExtension/BrowseResourceGroups) and locate the Resource Group that was automatically created to host the Node Pools for AKS. It will have the naming format of `MC_fabmedical-[SUFFIX]_fabmedical-[SUFFIX]_[REGION]`.
+
+7. Within the Azure Cloud Shell, create a script to update the public DNS name for the IP.
 
    ```bash
    code update-ip.sh
    ```
 
-   Paste the following as the contents and update the IP and SUFFIX values:
+   Paste the following as the contents. Be sure to replace the following placeholders in the script:
 
+   - `[INGRESS PUBLIC IP]`: Replace this with the IP Address copied from step 5.
+   - `[AKS NODEPOOL RESOURCE GROUP]`: Replace with the name of the Resource Group copied from step 6.
+   - `[SUFFIX]`: Replace this with the same SUFFIX value used previously for this lab.
+   
    ```bash
    #!/bin/bash
 
    # Public IP address
    IP="[INGRESS PUBLIC IP]"
 
+   # Resource Group that contains AKS Node Pool
+   KUBERNETES_NODE_RG="[AKS NODEPOOL RESOURCE GROUP]"
+
    # Name to associate with public IP address
    DNSNAME="fabmedical-[SUFFIX]-ingress"
 
    # Get the resource-id of the public ip
-   PUBLICIPID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$IP')].[id]" --output tsv)
+   PUBLICIPID=$(az network public-ip list --resource-group $KUBERNETES_NODE_RG --query "[?ipAddress!=null]|[?contains(ipAddress, '$IP')].[id]" --output tsv)
 
    # Update public ip address with dns name
    az network public-ip update --ids $PUBLICIPID --dns-name $DNSNAME
    ```
 
    ![A screenshot of cloud shell editor showing the updated IP and SUFFIX values.](media/Ex4-Task5.6.png "Update the IP and SUFFIX values")
-
-   Be sure to replace the following placeholders in the script:
-
-   - `[INGRESS PUBLIC IP]`: Replace this with the IP Address copied previously.
-   - `[SUFFIX]`: Replace this with the same SUFFIX value used previously for this lab.
 
 7. Save changes and close the editor.
 
