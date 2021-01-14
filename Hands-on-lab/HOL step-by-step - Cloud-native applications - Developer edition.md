@@ -1815,7 +1815,7 @@ In this task, you will run a performance test script that will test the Autoscal
 4. On your lab VM navigate to the location you cloned your `fabmedical` repository.
 
     ```bash
-    cd ~/Fabmedical
+    cd ~/fabmedical
     ```
 
 6. Open the `perftest.sh` script for editing in Vim (or Visual Studio Code remote if you have it installed)
@@ -1840,11 +1840,17 @@ In this task, you will run a performance test script that will test the Autoscal
 
 10. Once the script has completed, navigate back to the **Cosmos DB account** in the Azure portal.
 
-11. Scroll down on the **Overview** pane of the **Cosmos DB account** blade, and locate the **Request Charge** graph.
+11. Reset the script to the one from git by running the following command. This ensures you don't commit your Cosmos DB credentials to source control.
+
+    ```bash
+    git checkout -- perftest.sh
+    ```
+
+12. Scroll down on the **Overview** pane of the **Cosmos DB account** blade, and locate the **Request Charge** graph.
 
     > **Note:** It may take 2 - 5 minutes for the activity on the Cosmos DB collection to appear in the activity log. Wait a couple minutes and then refresh the pane if the recent Request charge doesn't show up right now.
 
-12. Notice that the **Request charge** now shows there was activity on the **Cosmos DB account** that exceeded the 400 RU/s limit that was previously set before Autoscale was turned on.
+13. Notice that the **Request charge** now shows there was activity on the **Cosmos DB account** that exceeded the 400 RU/s limit that was previously set before Autoscale was turned on.
 
     ![The screenshot shows the Cosmos DB request charge graph showing recent activity from performance test](media/cosmos-request-charge.png "Recent CosmosDB activity graph")
 
@@ -1862,6 +1868,10 @@ Kubernetes services can discover the ports assigned to each pod, allowing you to
 | ------------------------------------------ | :----------------------------------------------------------------: |
 | **Description**                            | **Links**                                                          |
 | Use a public Standard Load Balancer in Azure Kubernetes Service (AKS) | https://docs.microsoft.com/azure/aks/load-balancer-standard              |
+| What is Application Insights?                                         | https://docs.microsoft.com/azure/azure-monitor/app/app-insights-overview |
+| Kubernetes: Ingress                                                   | https://kubernetes.io/docs/concepts/services-networking/ingress/         |
+| Kubernetes: Ingress Controllers                                       | https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/ |
+
 
 ### Task 1: Scale a service without port constraints
 
@@ -1947,10 +1957,12 @@ In this task, you will edit the web application source code to add Application I
 
    Copy this value. You will use it later.
 
-2. Update your starter files by pulling the latest changes from the Git repository:
+   > **Note:** if you have a blank result check that the command you issued refers to the right resource.
+
+2. On your lab VM update your fabmedical repository files by pulling the latest changes from the git repository:
 
    ```bash
-   cd ~/MCW-Cloud-native-applications/Hands-on\ lab/lab-files/developer/content-web
+   cd ~/fabmedical/content-web
    git pull
    ```
 
@@ -1960,13 +1972,7 @@ In this task, you will edit the web application source code to add Application I
    npm install applicationinsights --save
    ```
 
-4. Open the `app.js` file:
-
-   ```bash
-   code app.js
-   ```
-
-5. Add the following lines immediately after `express` is instantiated on line 6:
+4. Edit the `app.js` file using Vim or Visual Studio Code remote and add the following lines immediately after `express` is instantiated on line 6:
 
    ```javascript
    const appInsights = require("applicationinsights");
@@ -1976,9 +1982,9 @@ In this task, you will edit the web application source code to add Application I
 
    ![A screenshot of the code editor showing updates in context of the app.js file](media/hol-2019-10-02_12-33-29.png "AppInsights updates in app.js")
 
-6. Save changes and close the editor.
+5. Save changes and close the editor.
 
-7. Push these changes to your repository so that GitHub Actions CI will build and deploy a new image.
+6. Push these changes to your repository so that GitHub Actions CI will build and deploy a new Container image.
 
    ```bash
    git add .
@@ -1986,11 +1992,11 @@ In this task, you will edit the web application source code to add Application I
    git push
    ```
 
-8. Visit the `content-web` workflow for your GitHub repository and see the new image being deployed into your Kubernetes cluster.
+7. Visit the `content-web` Action for your GitHub Fabmedical repository and see the new Image being deployed into your Kubernetes cluster.
 
-9. While this update runs, return the Kubernetes management dashboard in the browser.
+8. While this update runs, return the Kubernetes management dashboard in the browser.
 
-10. From the navigation menu, select **Replica Sets** under **Workloads**. From this view, you will see a new replica set for the web, which may still be in the process of deploying (as shown below) or already fully deployed.
+9. From the navigation menu, select **Replica Sets** under **Workloads**. From this view, you will see a new replica set for the web, which may still be in the process of deploying (as shown below) or already fully deployed.
 
     ![At the top of the list, a new web replica set is listed as a pending deployment in the Replica Set box.](media/image144.png "Pod deployment is in progress")
 
@@ -2000,9 +2006,9 @@ In this task, you will edit the web application source code to add Application I
 
 ### Task 5: Configure Kubernetes Ingress
 
-In this task you will setup a Kubernetes Ingress to take advantage of path-based routing and TLS termination.
+In this task you will setup a Kubernetes Ingress using an [nginx proxy server](https://nginx.org/en/) to take advantage of path-based routing and TLS termination.
 
-1. Within the Azure Cloud Shell, run the following command to add the Nginx stable Helm repository:
+1. Within the Azure Cloud Shell, run the following command to add the nginx stable Helm repository:
 
     ```bash
     helm repo add nginx-stable https://helm.nginx.com/stable
@@ -2019,15 +2025,18 @@ In this task you will setup a Kubernetes Ingress to take advantage of path-based
    > helm repo add stable https://kubernetes-charts.storage.googleapis.com/
    > ```
 
-3. Install the ingress controller resource to handle ingress requests as they come in. The ingress controller will receive a public IP of its own on the Azure Load Balancer and be able to handle requests for multiple services over port 80 and 443.
+3. Install the Ingress Controller resource to handle ingress requests as they come in. The Ingress Controller will receive a public IP of its own on the Azure Load Balancer and be able to handle requests for multiple services over port 80 and 443.
 
    ```bash
    helm install nginx-stable/nginx-ingress --namespace kube-system --set controller.replicaCount=2 --generate-name
    ```
 
-4. From the Kubernetes dashboard, ensure the Namespace filter is set to **All namespaces**
+4. From the Kubernetes dashboard, change the Namespace filter and set ir to **All namespaces**. It will likely read **default** as shown below.
 
-5. Under **Discovery and Load Balancing**, select **Services**, then copy the IP Address for the **External endpoints** for the `nginx-ingress-RANDOM-controller` service.
+   ![A screenshot of the Kubernetes management dashboard showing the default Namespace selected.](media/image-namespace.png "Default namespace selected")
+
+
+5. Under **Discovery and Load Balancing**, select **Services**, then copy the IP Address for the **External endpoints** for the `nginx-ingress-RANDOM-nginx-ingress` service.
 
    ![A screenshot of the Kubernetes management dashboard showing the ingress controller settings.](media/Ex4-Task5.5.png "Copy ingress controller settings")
 
