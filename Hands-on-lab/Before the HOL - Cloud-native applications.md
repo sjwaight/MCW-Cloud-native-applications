@@ -1,4 +1,4 @@
-!["Microsoft Cloud Workshops"][logo]
+![Microsoft Cloud Workshops][logo]
 
 <div class="MCWHeader1">
 Cloud-native applications
@@ -9,7 +9,7 @@ Before the hands-on lab setup guide
 </div>
 
 <div class="MCWHeader3">
-November 2020
+January 2021
 </div>
 
 Information in this document, including URL and other Internet Web site references, is subject to change without notice. Unless otherwise noted, the example companies, organizations, products, domain names, e-mail addresses, logos, people, places, and events depicted herein are fictitious, and no association with any real company, organization, product, domain name, e-mail address, logo, person, place or event is intended or should be inferred. Complying with all applicable copyright laws is the responsibility of the user. Without limiting the rights under copyright, no part of this document may be reproduced, stored in or introduced into a retrieval system, or transmitted in any form or by any means (electronic, mechanical, photocopying, recording, or otherwise), or for any purpose, without the express written permission of Microsoft Corporation.
@@ -426,3 +426,6 @@ As you have already setup a lab Virtual Machine that meets the specifications al
 Even if you're on a Windows or Mac you can still use this feature to access the remote Linux box for development purposes.
 
 Please follow the official setup guide if you wish to proceed: https://code.visualstudio.com/docs/remote/ssh
+
+[logo]: https://github.com/Microsoft/MCW-Template-Cloud-Workshop/raw/master/Media/ms-cloud-workshop.png
+[portal]: https://portal.azure.com
