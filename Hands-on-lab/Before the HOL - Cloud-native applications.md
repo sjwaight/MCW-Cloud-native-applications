@@ -412,8 +412,8 @@ In this task, you clone your newly created repository from GitHub so you can wor
    > ```
 
 **You are now ready to start with the main labs!**
- - [Developer](HOL%20step-by-step%20-%20Cloud-native%20applications%20-%20Developer%20edition.md) 
- - [Infrastructure](HOL%20step-by-step%20-%20Cloud-native%20applications%20-%20Infrastructure%20edition.md)  
+
+ - [Start Now!](HOL%20step-by-step%20-%20Cloud-native%20applications.md) 
 
 ### Task 9: Optional - Setup Visual Studio Code Remote Development
 

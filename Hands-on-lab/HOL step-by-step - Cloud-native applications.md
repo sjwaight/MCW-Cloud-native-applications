@@ -1,7 +1,7 @@
 ![Microsoft Cloud Workshops][logo]
 
 <div class="MCWHeader1">
-Cloud-native applications - Developer edition
+Cloud-native applications
 </div>
 
 <div class="MCWHeader2">
@@ -9,7 +9,7 @@ Hands-on lab step-by-step
 </div>
 
 <div class="MCWHeader3">
-November 2020
+January 2021
 </div>
 
 Information in this document, including URL and other Internet Web site references, is subject to change without notice. Unless otherwise noted, the example companies, organizations, products, domain names, e-mail addresses, logos, people, places, and events depicted herein are fictitious, and no association with any real company, organization, product, domain name, e-mail address, logo, person, place or event is intended or should be inferred. Complying with all applicable copyright laws is the responsibility of the user. Without limiting the rights under copyright, no part of this document may be reproduced, stored in or introduced into a retrieval system, or transmitted in any form or by any means (electronic, mechanical, photocopying, recording, or otherwise), or for any purpose, without the express written permission of Microsoft Corporation.
@@ -62,7 +62,6 @@ Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/int
     - [Task 5: Configure Kubernetes Ingress](#task-5-configure-kubernetes-ingress)
     - [Task 6: Multi-region Load Balancing with Traffic Manager](#task-6-multi-region-load-balancing-with-traffic-manager)
   - [After the hands-on lab](#after-the-hands-on-lab)
-
 <!-- /TOC -->
 
 # Cloud-native applications - Developer edition hands-on lab step-by-step
@@ -1868,6 +1867,7 @@ Kubernetes services can discover the ports assigned to each pod, allowing you to
 | ------------------------------------------ | :----------------------------------------------------------------: |
 | **Description**                            | **Links**                                                          |
 | Use a public Standard Load Balancer in Azure Kubernetes Service (AKS) | https://docs.microsoft.com/azure/aks/load-balancer-standard              |
+| Create an HTTPS ingress controller on Azure Kubernetes Service (AKS)  | https://docs.microsoft.com/azure/aks/ingress-tls |
 | What is Application Insights?                                         | https://docs.microsoft.com/azure/azure-monitor/app/app-insights-overview |
 | Kubernetes: Ingress                                                   | https://kubernetes.io/docs/concepts/services-networking/ingress/         |
 | Kubernetes: Ingress Controllers                                       | https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/ |
@@ -1918,7 +1918,7 @@ In this task, you will update the web service so that it supports dynamic discov
 
 5. From the **web** Deployments view, select **Scale**. From the dialog presented enter 4 as the desired number of pods and select **OK**.
 
-6. Check the status of the scale out by refreshing the web deployment's view. From the navigation menu, select **Pods** from under Workloads. Select the **api** pods. From this view, you should see an error like that shown in the following screenshot.
+6. Check the status of the scale out by refreshing the web deployment's view. From the navigation menu, select **Pods** from under Workloads. Select the **web** pods. From this view, you should see an error like that shown in the following screenshot.
 
    ![Deployments is selected under Workloads in the navigation menu on the left. On the right are the Details and New Replica Set boxes. The web deployment is highlighted in the New Replica Set box, indicating an error.](media/image141.png "View Pod deployment events")
 
@@ -2012,7 +2012,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 1. Within the Azure Cloud Shell, run the following command to add the nginx stable Helm repository:
 
     ```bash
-    helm repo add nginx-stable https://helm.nginx.com/stable
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     ```
 
 2. Update your helm package list.
@@ -2026,16 +2026,26 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
    > helm repo add stable https://kubernetes-charts.storage.googleapis.com/
    > ```
 
+3. Create a namespace in Kubernetes to install the Ingress resources.
+
+    ```bash
+    kubectl create namespace ingress-demo
+    ```
+
 3. Install the Ingress Controller resource to handle ingress requests as they come in. The Ingress Controller will receive a public IP of its own on the Azure Load Balancer and be able to handle requests for multiple services over port 80 and 443.
 
    ```bash
-   helm install nginx-stable/nginx-ingress --namespace kube-system --set controller.replicaCount=2 --generate-name
+   helm install nginx-ingress ingress-nginx/ingress-nginx \
+    --namespace ingress-demo \
+    --set controller.replicaCount=2 \
+    --set controller.nodeSelector."beta\.kubernetes\.io/os"=linux \
+    --set defaultBackend.nodeSelector."beta\.kubernetes\.io/os"=linux \
+    --set controller.admissionWebhooks.patch.nodeSelector."beta\.kubernetes\.io/os"=linux
    ```
 
 4. From the Kubernetes dashboard, change the Namespace filter and set ir to **All namespaces**. It will likely read **default** as shown below.
 
    ![A screenshot of the Kubernetes management dashboard showing the default Namespace selected.](media/image-namespace.png "Default namespace selected")
-
 
 5. Under **Discovery and Load Balancing**, select **Services**, then copy the IP Address for the **External endpoints** for the `nginx-ingress-RANDOM-nginx-ingress` service.
 
@@ -2044,7 +2054,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
     > **Note**: It could take a few minutes to refresh, alternately, you can find the IP using the following command in Azure Cloud Shell.
     >
     > ```bash
-    > kubectl get svc --namespace kube-system
+    > kubectl get svc --namespace ingress-demo
     > ```
     >
    ![A screenshot of Azure Cloud Shell showing the command output.](media/Ex4-Task5.5a.png "View the ingress controller LoadBalancer")
@@ -2210,31 +2220,33 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
     Use the following as the contents and update the `[SUFFIX]` and `[AZURE-REGION]` to match your ingress DNS name:
 
     ```yaml
-    apiVersion: networking.k8s.io/v1beta1
-    kind: Ingress
-    metadata:
-      name: content-ingress
-      annotations:
-        kubernetes.io/ingress.class: nginx
-        certmanager.k8s.io/cluster-issuer: letsencrypt-prod
-        nginx.ingress.kubernetes.io/rewrite-target: /$1
-    spec:
-      tls:
-        - hosts:
+      apiVersion: networking.k8s.io/v1beta1
+      kind: Ingress
+      metadata:
+         name: content-ingress
+         annotations:
+            kubernetes.io/ingress.class: nginx
+            nginx.ingress.kubernetes.io/rewrite-target: /$1
+            nginx.ingress.kubernetes.io/use-regex: "true"
+            nginx.ingress.kubernetes.io/ssl-redirect: "false"
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+      spec:
+         tls:
+         - hosts:
             - fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
-          secretName: tls-secret
-      rules:
-        - host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
-          http:
-            paths:
-              - path: /(.*)
-                backend:
+            secretName: tls-secret
+         rules:
+         - host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
+            http:
+               paths:
+               - backend:
                   serviceName: web
                   servicePort: 80
-              - path: /content-api/(.*)
-                backend:
+               path: /(.*)
+               - backend:
                   serviceName: api
                   servicePort: 3001
+               path: /content-api/(.*)
     ```
 
 18. Save changes and close the editor.
@@ -2247,7 +2259,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 
 20. Refresh the ingress endpoint in your browser. You should be able to visit the speakers and sessions pages and see all the content.
 
-21. Visit the api directly, by navigating to `/content-api/sessions` at the ingress endpoint.
+21. Visit the API directly, by navigating to `/content-api/sessions` at the ingress endpoint.
 
     ![A screenshot showing the output of the sessions content in the browser.](media/Ex4-Task5.19.png "Content api sessions")
 
@@ -2259,13 +2271,9 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 
 In this task, you will setup Azure Traffic Manager as a multi-region load balancer. This will enable you to provision an AKS instance of the app in a secondary Azure region with load balancing between the two regions.
 
-1. Within the Azure Portal, select **+ Create a resource**.
+1. Open the [Azure Portal Create Traffic Manager profile Blade](https://portal.azure.com/#create/Microsoft.TrafficManagerProfile).
 
-2. Search the marketplace for **Traffic Manager profile**, select this resource type, then select **Create**.
-
-    ![The screenshot shows Traffic Manager profile in the Azure marketplace.](media/tm-marketplace.png "Traffic Manager profile")
-
-3. On the **Create Traffic Manager profile** blade, enter the following values, then select **Create**.
+2. On the **Create Traffic Manager profile** blade, enter the following values, then select **Create**.
 
     - Name: `fabmedical-[SUFFIX]'
     - Routing Method: **Performance**
@@ -2273,9 +2281,9 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
 
     ![The screenshot shows the Create Traffic Manager profile blade with all values entered.](media/tm-create.png "Create Traffic Manager profile configuration")
 
-4. Navigate to the newly created `fabmedical-[SUFFIX]` **Traffic Manager profile**.
+4. Once deployment completes, navigate to the newly created `fabmedical-[SUFFIX]` **Traffic Manager profile**.
 
-5. On the **Traffic Manager profile** blade, select **Endpoints** under **Settings**.
+5. On the **Traffic Manager profile** blade, select **Endpoints** under **Settings** on the left navigation.
 
 6. On the **Endpoints** pane, select **+ Add** to add a new endpoint to be load balanced.
 
@@ -2285,6 +2293,8 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
     - Name: `primary`
     - Fully-qualified domain name (FQDN) or IP: `fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com`
     - Location: Choose the same Azure Region as AKS.
+    - Custom Header Settings: leave blank.
+    - Add as disabled: leave unchecked.
 
     Be sure to replace the `[SUFFIX]` and `[AZURE-REGION]` placeholders.
 
@@ -2298,7 +2308,70 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
 
     ![The Traffic Manager profile overview pane with the DNS name highlighted](media/tm-overview.png "fabmedical Traffic Manager profile DNS name")
 
-11. Open a new web browser tab and navigate to the Traffic Manager profile **DNS name** that as just copied.
+11. Open a new web browser tab and navigate to the Traffic Manager profile **DNS name** that as just copied. You will receieve a 404 Not Found error. This is because the browser is not sending a host header that the ingress knows about.
+
+      You could request the URL using the `curl` command line to see it function as expected. The following will return the JSON result for speakers.
+
+      ```bash
+      curl  -H "Host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com" http://fabmedical-[SUFFIX].trafficmanager.net/content-api/speakers
+      ```
+
+12. In Azure Cloud Shell open the ingress deployment you created in Step 17 of the last Task. We will add a host entry so that requests using the Traffic Manager hostname work without needing to specificy a host header that maps to the ingress hostname.
+
+    ```bash
+    code content.ingress.yml
+    ```
+
+    Use the following as the contents and update the `[SUFFIX]` and `[AZURE-REGION]` to match your ingress DNS name:
+
+    ```yaml
+      apiVersion: networking.k8s.io/v1beta1
+      kind: Ingress
+      metadata:
+         name: content-ingress
+         annotations:
+            kubernetes.io/ingress.class: nginx
+            nginx.ingress.kubernetes.io/rewrite-target: /$1
+            nginx.ingress.kubernetes.io/use-regex: "true"
+            nginx.ingress.kubernetes.io/ssl-redirect: "false"
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+      spec:
+         tls:
+         - hosts:
+            - fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
+            secretName: tls-secret
+         rules:
+         - host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
+            http:
+               paths:
+               - backend:
+                  serviceName: web
+                  servicePort: 80
+               path: /(.*)
+               - backend:
+                  serviceName: api
+                  servicePort: 3001
+               path: /content-api/(.*)
+         - host: fabmedical-[SUFFIX].trafficmanager.net
+            http:
+               paths:
+               - backend:
+                  serviceName: web
+                  servicePort: 80
+               path: /(.*)
+               - backend:
+                  serviceName: api
+                  servicePort: 3001
+               path: /content-api/(.*)
+    ```
+
+      Save the file and apply the changes to your AKS cluster by issuing the following command.
+
+      ```bash
+      kubectl apply -f content.ingress.yml
+      ```
+
+      Refresh the web browser which previoulsy received the 404 error and you should now see the website load as expected.
 
     ![The screenshot shows the Contoso Neuro website using the Traffic Manager profile DNS name](media/tm-endpoint-website.png "Traffic Manager show Contoso home page")
 
