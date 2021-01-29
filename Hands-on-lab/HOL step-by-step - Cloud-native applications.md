@@ -2023,7 +2023,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 
    > **Note**: If you get a "no repositories found." error, then run the following command. This will add back the official Helm "stable" repository.
    > ```
-   > helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+   > helm repo add stable https://charts.helm.sh/stable 
    > ```
 
 3. Create a namespace in Kubernetes to install the Ingress resources.
