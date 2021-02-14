@@ -191,7 +191,7 @@ You create VMs during the upcoming exercises. In this section, you create an SSH
 
     ![In this screenshot of the cloud shell window, cat .ssh/fabmedical has been typed and run at the command prompt. Information about the public key content appears in the window.](media/b4-image571.png "Cloud Shell - cat .ssh")
 
-8. If you wish to SSH from other machines like your local workstation then you can copy the SSH keys from Cloud Shell and add them locally. In Cloud Shell select the **Upload/Download files** button and select **Download**. Download the `fabmedical` and `fabmedicalpub` files and copy them to your local .ssh folder. 
+8. If you wish to SSH from other machines like your local workstation then you can copy the SSH keys from Cloud Shell and add them locally. In Cloud Shell select the **Upload/Download files** button and select **Download**. Download the `fabmedical` and `fabmedical.pub` files and copy them to your local .ssh folder. 
 
     ![In this screenshot of the cloud shell window, cat .ssh/fabmedical has been typed and run at the command prompt. Information about the public key content appears in the window.](media/download-ssh-shell.png "Cloud Shell - download file")
 
