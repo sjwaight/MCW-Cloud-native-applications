@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "Suffix": {
@@ -120,7 +120,8 @@
         "appInsightsNames": [
             "content-web",
             "content-api"
-        ]
+        ],
+        "cloudInit": "https://raw.githubusercontent.com/sjwaight/MCW-Cloud-native-applications/master/Hands-on-lab/lab-files/cloud-init.txt"
     },
     "resources": [
         {
@@ -234,6 +235,7 @@
                 "osProfile": {
                     "computerName": "[variables('virtualMachineNameLinux')]",
                     "adminUsername": "[parameters('VirtualMachineAdminUsernameLinux')]",
+                    "customData": "[base64(variables('cloudInit'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
@@ -243,8 +245,7 @@
                                     "keyData": "[parameters('VirtualMachineAdminPublicKeyLinux')]"
                                 }
                             ]
-                        },
-                        
+                        }
                     }
                 },
                 "diagnosticsProfile": {
