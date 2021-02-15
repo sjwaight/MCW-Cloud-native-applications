@@ -114,7 +114,7 @@ In this task, you use `git` to clone the lab content to your cloud shell so that
 1. Type the following command and press `<ENTER>`:
 
    ```bash
-   git clone https://github.com/microsoft/MCW-Cloud-native-applications.git
+   git clone https://github.com/sjwaight/MCW-Cloud-native-applications.git
    ```
 
    > **Note**: If you do not have enough free space, you may need to remove extra files from your cloud shell environment.  Try running `azcopy jobs clean` to remove any `azcopy` jobs and data you do not need.
@@ -234,7 +234,7 @@ In this section, you configure and execute an ARM template that creates all the 
    > **Note**: If you don't have a cloud shell available, refer back to [Task 1: Setup Azure Cloud Shell](#task-1-setup-azure-cloud-shell).
 
    ```bash
-   cd MCW-Cloud-native-applications/Hands-on\ lab/arm/
+   cd MCW-Cloud-native-applications/Hands-on-lab/arm/
    ```
 
 2. Open the azuredeploy.parameters.json file for editing using Azure Cloud Shell editor.
