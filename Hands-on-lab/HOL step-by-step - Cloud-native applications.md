@@ -45,12 +45,11 @@ Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/int
     - [Task 2: Deploy a service using the Kubernetes management dashboard](#task-2-deploy-a-service-using-the-kubernetes-management-dashboard)
     - [Task 3: Deploy a service using kubectl](#task-3-deploy-a-service-using-kubectl)
     - [Task 4: Deploy a service using a Helm chart](#task-4-deploy-a-service-using-a-helm-chart)
-    - [Task 5: Test the application in a browser](#task-5-test-the-application-in-a-browser)
-    - [Task 6: Configure Continuous Delivery to the Kubernetes Cluster](#task-6-configure-continuous-delivery-to-the-kubernetes-cluster)
-    - [Task 7: Review Azure Monitor for Containers](#task-7-review-azure-monitor-for-containers)
+    - [Task 5: Configure Continuous Delivery to the Kubernetes Cluster](#task-5-configure-continuous-delivery-to-the-kubernetes-cluster)
+    - [Task 6: Review Azure Monitor for Containers](#task-6-review-azure-monitor-for-containers)
   - [Exercise 4: Scale the application and test High Availability](#exercise-4-scale-the-application-and-test-high-availability)
-    - [Task 1: Increase service instances from the Kubernetes dashboard](#task-1-increase-service-instances-from-the-kubernetes-dashboard)
-    - [Task 2: Increase service instances beyond available resources](#task-2-increase-service-instances-beyond-available-resources)
+    - [Task 1: Increase service instances from the Azure Portal](#task-1-increase-service-instances-from-the-azure-portal)
+    - [Task 2: Resolve failed provisioning of replicas](#task-2-resolve-failed-provisioning-of-replicas)
     - [Task 3: Restart containers and test High Availability](#task-3-restart-containers-and-test-high-availability)
     - [Task 4: Configure Cosmos DB Autoscale](#task-4-configure-cosmos-db-autoscale)
     - [Task 5: Test Cosmos DB Autoscale](#task-5-test-cosmos-db-autoscale)
@@ -850,9 +849,9 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
 **Duration**: 30 minutes
 
-In this exercise, you will connect to the Azure Kubernetes Service cluster you created before the hands-on lab and deploy the containerized application to the cluster.
+In this exercise, you will use a combination of the Kubernetes commandline "kubectl" and the Azure Portal to deploy the containerized application to the cluster.
 
-> **Note:** many Kubernetes Dashboard activities (creating or viewing deployments, services, node pools, etc) you can now use the AKS blades in the Azure Portal if you wish.
+> **Note:** starting with Kubernetes 1.18 the default Kubernetes dashboard is no longer available by default in AKS. You can choose to install and run it on a Pod if that is your preferred method of management.s
 
 ### Help references
 
@@ -866,136 +865,115 @@ In this exercise, you will connect to the Azure Kubernetes Service cluster you c
 | Introduction to Helm                                   | https://helm.sh/docs/intro/                                                           |
 | Azure Monitor for containers overview                  | https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview   |
 
-### Task 1: Tunnel into the Azure Kubernetes Service cluster
+### Task 1: Deploy a service using the Azure Portal
 
-In this task, you will gather the information you need about your Azure Kubernetes Service (AKS) cluster to connect to the cluster and execute commands to connect to the Kubernetes management dashboard from Azure Cloud Shell.
+In this task, you will deploy the API application to the Azure Kubernetes Service cluster using the Azure Portal.
 
-Azure Cloud Shell has many common utilities, including kubectl already installed. Kubectl is the native Kubernetes command-line management tool which can be used with any Kubernetes cluster. 
 
-> **Note**: The following tasks should be executed in Azure Cloud Shell and not the lab VM.
+1. We first need to define a Service for our API so that the applicaton is accessible within the cluster. In the AKS blade in the Azure Portal select **Services and ingresses** and on the Services tab select **+ Add**.
 
-1. Verify that you are connected to the correct Azure subscription with the following command to show your default subscription:
+    ![This is a screenshot of the Azure Portal for AKS showing adding a Service.](media/2021-02-17_8-22-59.png "Add a Service")
 
-   ```bash
-   az account show
+2. In the **Add with YAML** screen, paste following YAML and choose **Add**.
+
+   ```yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+   labels:
+      app: api
+   name: api
+   spec:
+   ports:
+      - name: api-traffic
+         port: 3001
+         protocol: TCP
+         targetPort: 3001
+   selector:
+      app: api
+   sessionAffinity: None
+   type: ClusterIP
    ```
 
-   - If you are not connected to the correct subscription, list your subscriptions and then set the subscription by its id with the following commands (similar to what you did in Azure Cloud Shell before the lab):
+3. Now select **Workloads** under the **Kubernetes resources** section in the left navigation.
 
-   ```bash
-   az account list
-   az account set --subscription {id}
+    ![Select workloads under Kubernetes resources.](media/2021-02-16_13-59-15.png "Select workloads under Kubernetes resources")
+
+2. From the Workloads view, with **Deployments** selected (the default) then select **+ Add**.
+
+   ![Selecing + Add to create a deployment.](media/2021-02-16_14-12-50.png "Selecing + Add to create a deployment")
+
+3. In the **Add with YAML** screen that loads paste the following YAML and update the 
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+   labels:
+         app: api
+   name: api
+   spec:
+   replicas: 1
+   selector:
+         matchLabels:
+         app: api
+   strategy:
+         rollingUpdate:
+         maxSurge: 1
+         maxUnavailable: 1
+         type: RollingUpdate
+   template:
+         metadata:
+         labels:
+               app: api
+         name: api
+         spec:
+         containers:
+         - image: [LOGINSERVER].azurecr.io/content-api
+            livenessProbe:
+               httpGet:
+                  path: /
+                  port: 3001
+               initialDelaySeconds: 30
+               periodSeconds: 20
+               timeoutSeconds: 10
+               failureThreshold: 3
+            imagePullPolicy: Always
+            name: api
+            ports:
+               - containerPort: 3001
+               hostPort: 3001
+               protocol: TCP
+            resources:
+               requests:
+                  cpu: 1
+                  memory: 128Mi
+            securityContext:
+               privileged: false
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+         dnsPolicy: ClusterFirst
+         restartPolicy: Always
+         schedulerName: default-scheduler
+         securityContext: {}
+         terminationGracePeriodSeconds: 30
    ```
 
-2. Download connection profile so that kubectl can connect to your AKS cluster:
+4. Select **Add** to initiate the deployment. This can take a few minutes after which you will see the deployment listed.
 
-   ```bash
-   az aks get-credentials -a --name fabmedical-SUFFIX --resource-group fabmedical-SUFFIX
-   ```
+   ![Service is showing as unhealthy](media/2021-02-16_14-31-08.png "Service is showing as unhealthy")
 
-3. Test that the configuration is correct by running a simple kubectl command to produce a list of nodes:
+5. Select the **api** deployment to open the Deployment, select **Live logs** and then a Pod from the drop-down. After a few moments the live logs should appear.
 
-   ```bash
-   kubectl get nodes
-   ```
+   ![Service is showing as unhealthy](media/2021-02-16_14-37-57.png "Service is showing as unhealthy")
 
-   ![In this screenshot of the console, kubectl get nodes has been typed and run at the command prompt, which produces a list of nodes.](media/image75.png "kubectl get nodes")
+   > **Note:** if the logs don't display it may be the Pod no longer exists. You can use the **View in Log Analytics** to view historical logs regardless of Pod.
 
-4. Since the AKS cluster uses RBAC, a `ClusterRoleBinding` must be created before you can correctly access the dashboard. To create the required binding, execute the command below:
+6. If you scroll through the the log you can see it indicates that the content-api application is once again failing because it cannot find a MongoDB api to communicate with. You will resolve this issue by connecting to Cosmos DB.
 
-   ```bash
-   kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
-   ```
+   ![This screenshot of the Kubernetes management dashboard shows logs output for the api container.](media/2021-02-16_14-39-44.png "MongoDB communication error")
 
-   > **Note**: If you get an error saying `error: failed to create clusterrolebinding: clusterrolebindings.rbac.authorization.k8s.io "kubernetes-dashboard" already exists` just ignore it and move on to the next step.
-
-5. Before you can create an SSH tunnel and connect to the Kubernetes Dashboard, you will need to download the **Kubeconfig** file within Azure Cloud Shell that contains the credentials you will need to authenticate to the Kubernetes Dashboard.
-
-    Within the Azure Cloud Shell, use the following command to download the Kubeconfig file:
-
-    ```bash
-    download /home/<username>/.kube/config
-    ```
-
-    Make sure to replace the `<username>` placeholder with your name from the command-line in the Azure Cloud Shell.
-
-    >**Note**: You can find the `<username>` from the first part of the Azure Cloud Shell command-line prompt; such as `<username>@Azure:~$`.
-    >
-    > You can also look in the `/home` directory and so see the directory name that exists within it to find the correct username directory where the Kubeconfig file resides:
-    >
-    > ```bash
-    > ls /home
-    > ```
-
-6. Create an SSH tunnel linking a local port (`8001`) on your cloud shell host to port 443 on the management node of the cluster. Cloud shell will then use the web preview feature to give you remote access to the Kubernetes dashboard. Execute the command below replacing the values as follows:
-
-   > **Note**: After you run this command, it may work at first and later lose its connection, so you may have to run this again to reestablish the connection. If the Kubernetes dashboard becomes unresponsive in the browser this is an indication to return here and check your tunnel or rerun the command.
-
-   ```bash
-   az aks browse --name fabmedical-SUFFIX --resource-group fabmedical-SUFFIX
-   ```
-
-   ![In this screenshot of the console, the output of the az aks browse command.](media/image76.png "az aks browse command output")
-
-   > **Note:** you can open the dashboard by clicking on the URL in the Cloud Shell.
-
-7. If the tunnel is successful, you will see the Kubernetes Dashboard authentication screen. Select the **Kubeconfig** option, select the ellipsis (`...`) button, select the **Kubeconfig** file that was previously downloaded, then select **Sign in**.
-
-    ![The screenshot shows the Kubernetes Dashboard authentication prompt.](media/kubernetes-dashboard-kubeconfig-prompt.png "Kubernetes Dashboard authentication prompt")
-
-8. Once authenticated, you will see the Kubernetes management dashboard.
-
-   ![This is a screenshot of the Kubernetes management dashboard. Overview is highlighted on the left, and at right, kubernetes has a green check mark next to it. Below that, default-token-s6kmc is listed under Secrets.](media/image77.png "Show services and secrets")
-
-   > **Note**: If the tunnel is not successful (if a JSON output is displayed), execute the command below and then return to task 5 above:
-   >
-   > ```bash
-   > az extension add --name aks-preview
-   > ```
-
-### Task 2: Deploy a service using the Kubernetes management dashboard
-
-In this task, you will deploy the API application to the Azure Kubernetes Service cluster using the Kubernetes dashboard.
-
-1. From the Kubernetes dashboard, select **+ Create** in the top right corner.
-
-2. From the Resource creation view, select **Create from form**.
-
-   - Enter `api` for the App name.
-
-   - Enter `[LOGINSERVER]/content-api` for the Container Image, replacing `[LOGINSERVER]` with your Azure Container Registry login server, such as `fabmedicalsol.azurecr.io`.
-
-   - Set Number of pods to `1`.
-
-   - Set Service to `Internal`.
-
-   - Use `3001` for Port and `3001` for Target port and leave `TCP`.
-
-
-   ![This is a screenshot of the Deploy a Containerized App dialog box. Specify app details below is selected, and the fields have been filled in with the information that follows. At the bottom of the dialog box is a SHOW ADVANCED OPTIONS link.](media/image78.png "Display Create from form")
-
-
-3. Select **SHOW ADVANCED OPTIONS**
-
-   - Enter `1` for the CPU requirement (cores).
-
-   - Enter `128` for the Memory requirement (MiB).
-
-   ![In the Advanced options dialog box, the above information has been entered. At the bottom of the dialog box is a Deploy button.](media/image79.png "Show Advanced Options")
-
-4. Select **Deploy** to initiate the service deployment based on the image. This can take a few minutes. In the meantime, you will be redirected to the Overview dashboard. Select the **API** deployment from the **Overview** dashboard to see the deployment in progress.
-
-   ![This is a screenshot of the Kubernetes management dashboard. Overview is highlighted on the left, and at right, a red arrow points to the api deployment.](media/image80.png "See the deployment in progress")
-
-5. Kubernetes indicates a problem with the `api` **Replica Set** after some seconds. Select the ellipsis icon, then select **Logs** to investigate.
-
-   ![This is a screenshot of the Kubernetes management dashboard that shows an error with the replica set, and ellipse menu with Logs option highlighted.](media/Ex2-Task1.5.png "Investigate logs")
-
-6. The log indicates that the content-api application is once again failing because it cannot find a MongoDB api to communicate with. You will resolve this issue by connecting to Cosmos DB.
-
-   ![This screenshot of the Kubernetes management dashboard shows logs output for the api container.](media/Ex2-Task1.6.png "MongoDB communication error")
-
-7. Open the Azure Portal in your browser and navigate to your resource group and find your Cosmos DB resource. Select the Cosmos DB resource to view details.
+7. In the Azure Portal navigate to your resource group and find your Cosmos DB. Select the Cosmos DB resource to view details.
 
    ![This is a screenshot of the Azure Portal showing the Cosmos DB among existing resources.](media/Ex2-Task1.9.png "Select CosmosDB resource from list")
 
@@ -1011,10 +989,6 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
    mongodb://<USERNAME>:<PASSWORD>@fabmedical-<SUFFIX>.documents.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb
    ```
 
-10. To avoid disconnecting from the Kubernetes dashboard, open a **new** Azure Cloud Shell console (you can use a full screen version by opening https://shell.azure.com/).
-
-    ![This is a screenshot of the cloud shell window with a red arrow pointing at the "Open new session" button on the toolbar.](media/hol-2019-10-19_06-13-34.png "Open new Azure Cloud Shell console")
-
 11. You will setup a Kubernetes secret to store the connection string and configure the `content-api` application to access the secret. First, you must base64 encode the secret value. Open your Azure Cloud Shell window and use the following command to encode the connection string and then, copy the output.
 
     > **Note**: Double quote marks surrounding the connection string are required to successfully produce the required output.
@@ -1025,9 +999,9 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
     ![This is a screenshot of the Azure cloud shell window showing the command to create the base64 encoded secret.  The output to copy is highlighted.](media/hol-2019-10-18_07-12-13.png "Show encoded secret")
 
-12. Return to the Kubernetes Dashboard UI in your browser and select **+ Create**.
+12. Return to the AKS blade in the Azure Portal and select **Configuration** under the **Kubernetes resources** section. Select **Secrets** and choose **+ Add**.
 
-13. In the **Create from input** tab, update the following YAML with the encoded connection string from your clipboard, paste the YAML data into the create dialog, and choose **Upload**. Note that YAML is position sensitive so you must ensure indentation is correct when typing or pasting.
+13. In the **Add with YAML** screen, paste following YAML and replace the placeholder with the encoded connection string from your clipboard and choose **Add**. Note that YAML is position sensitive so you must ensure indentation is correct when typing or pasting.
 
     ```yaml
     apiVersion: v1
@@ -1039,15 +1013,15 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
       db: <base64 encoded value>
     ```
 
-    ![This is a screenshot of the Kubernetes management dashboard showing the YAML file for creating a deployment.](media/Ex2-Task1.13.png "Upload YAML data")
+    ![This is a screenshot of the Azure Portal for AKS howing the YAML file for creating a deployment.](media/2021-02-16_14-52-33.png "Upload YAML data")
 
-14. Scroll down in the Kubernetes dashboard until you can see **Secrets** in the left-hand menu. Select it.
+14. Sort the Secrets list by name and you should now see your new secret displayed. 
 
-    ![This is a  screenshot of the Kubernetes management dashboard showing secrets.](media/Ex2-Task1.14.png "Manage Kubernetes secrets")
+    ![This is a screenshot of the Azure Portal for AKS showing secrets.](media/2021-02-16_14-57-18.png "Manage Kubernetes secrets")
 
-15. View the details for the **cosmosdb** secret. Select the eyeball icon to show the secret.
+15. View the details for the **cosmosdb** secret by selected it in the list.
 
-    ![This is a screenshot of the Kubernetes management dashboard showing the value of a secret.](media/Ex2-Task1.15.png "View CosmosDB secret")
+    ![This is a screenshot of the Azure Portal for AKS showing the value of a secret.](media/2021-02-16_14-59-17.png "View cosmosdb secret")
 
 16. Next, download the api deployment configuration using the following command in your Azure Cloud Shell window:
 
@@ -1078,22 +1052,16 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
     ![This is a screenshot of the code editor save and close actions.](media/Ex2-Task1.17.1.png "Code editor configuration update")
 
-19. Update the api deployment by using `kubectl` to apply the new configuration.
+19. Update the api deployment by using `kubectl` to deploy the API.
 
-    ```bash
-    kubectl apply -f api.deployment.yml
-    ```
+   ```bash
+   kubectl delete deployment api
+   kubectl create -f api.deployment.yml
+   ```
 
-    >**Note**: If you receive an error like `Operation cannot be fulfilled on deployment.apps "api"` then delete the deployment and recreate it using the modified `api.deployment.yml` file.
+20. In the Azure Portal return to Live logs (see Step 5). The last log should show as connected to MongoDB.
 
-      ```bash
-      kubectl delete deployment api
-      kubectl create -f api.deployment.yml
-      ```
-
-20. In the Kubernetes Dashboard select **Deployments** then **api** to view the api deployment. It now has a healthy instance and the logs indicate it has connected to MongoDB.
-
-    ![This is a screenshot of the Kubernetes management dashboard showing logs output.](media/Ex2-Task1.19.png "API Logs")
+    ![This is a screenshot of the Kubernetes management dashboard showing logs output.](media/2021-02-16_16-23-27.png "API Logs")
 
 ### Task 3: Deploy a service using kubectl
 
@@ -1219,11 +1187,7 @@ In this task, deploy the web application and expose it to the Internet via a Kub
 
     ![In this screenshot of the console, kubectl apply -f kubernetes-web.yaml has been typed and run at the command prompt. Messages about web deployment and web service creation appear below.](media/image93.png "kubectl create application")
 
-11. Return to the browser where you have the Kubernetes management dashboard open. From the navigation menu, under **Discovery and Load Balancing**, select the **Services** view.
-
-12. From the Services view, select the `web` service, and from this view, you will see the web service deploying. This deployment can take a few minutes.
-
-13. When it completes, navigate to the main services link, you should be able to access the website via an external endpoint.
+11. Return to the AKS blade in the Azure Portal. From the navigation menu, under **Kubernetes resources**, select the **Services and ingresses** view. You should be able to access the website via an external endpoint.
 
     ![In the Kubernetes management dashboard, Services is selected below Discovery and Load Balancing in the navigation menu. At right are three boxes that display various information about the web service deployment: Details, Pods, and Events.](media/image94.png "Display External Endpoint")
 
@@ -1235,15 +1199,15 @@ In this task, deploy the web application and expose it to the Internet via a Kub
 
 In this task, you will deploy the **content-web** service using a [Helm](https://helm.sh/) chart to streamline the installing and managing the container-based application on the AKS cluster.
 
-1. From the Kubernetes dashboard, under **Workloads**, select **Deployments**.
+1. From the AKS blade in the Azure Portal, under **Kubernetes resources**, select **Workloads**.
 
-2. Select the triple vertical dots on the right of the `web` deployment and then choose **Delete**. When prompted, select **Delete** again.
+2. Select the `web` Deployment and then choose **Delete**. When prompted, check **Confirm delete** and select **Delete** again.
 
    ![A screenshot of the Kubernetes management dashboard showing how to delete a deployment.](media/Ex2-Task4.2.png "Kubernetes dashboard web deployments")
 
-3. From the Kubernetes dashboard, under **Discovery and Load Balancing**, select **Services**.
+3. From the AKS blade in the Azure Portal, under **Kubernetes resources**, select **Services and ingresses**.
 
-4. Select the triple vertical dots on the right of the **web** service and then choose **Delete**. When prompted, select **Delete** again.
+4. Select the `web` Service and then choose **Delete**. When prompted, check **Confirm delete** and select **Delete** again.
 
    ![A screenshot of the Kubernetes management dashboard showing how to delete a deployment.](media/Ex2-Task4.4.png "Kubernetes delete deployment")
 
@@ -1399,9 +1363,9 @@ In this task, you will deploy the **content-web** service using a [Helm](https:/
 
     ![In this screenshot of the console, helm install web ./web has been typed and run at the command prompt. Messages about web deployment and web service creation appear below.](media/Ex2-Task4.24.png "Helm web deployment messages")
 
-24. Return to the browser where you have the Kubernetes management dashboard open. From the navigation menu, select **Services** view under **Discovery and Load Balancing**. From the Services view, select the **web** service, and from this view, you will see the web service deploying. This deployment can take a few minutes. When it completes, you should be able to access the website via an external endpoint.
+24. Return to the browser where you have the Azure Portal open. From the navigation menu, select **Services and ingresses**. You will see the web service deploying which deployment can take a few minutes. When it completes, you should be able to access the website via an external endpoint.
 
-    ![In the Kubernetes management dashboard, Services is selected below Discovery and Load Balancing in the navigation menu. At right are three boxes that display various information about the web service deployment: Details, Pods, and Events. "External endpoints" is highlighted to show that an external endpoint has been created.](media/image94.png "Web service endpoint")
+    ![In the AKS Services and ingresses blade in the Azure Portal showing the web service selected.](media/image94.png "Web service endpoint")
 
 25. Select the speakers and sessions links and check that content is displayed for each.
 
@@ -1415,23 +1379,7 @@ In this task, you will deploy the **content-web** service using a [Helm](https:/
     git push
     ```
 
-### Task 5: Test the application in a browser
-
-In this task, you will verify that you can browse to the web service you have deployed and view the speaker and content information exposed by the API service.
-
-1. From the Kubernetes management dashboard, in the navigation menu, select the **Services** view under **Discovery and Load Balancing**.
-
-2. In the list of services, locate the external endpoint for the `web` service and select this hyperlink to launch the application.
-
-   ![In the Services box, a red arrow points at the hyperlinked external endpoint for the web service.](media/image112.png "Application external endpoint")
-
-3. You will see the `web` application in your browser and be able to select the Speakers and Sessions links to view those pages without errors. The lack of errors means that the web application is correctly calling the API service to show the details on each of those pages.
-
-   ![In this screenshot of the Contoso Neuro web application, Speakers has been selected, and sample speaker information appears at the bottom.](media/image114.png "Sample speaker information displayed")
-
-   ![In this screenshot of the Contoso Neuro web application, Sessions has been selected, and sample session information appears at the bottom.](media/image115.png "Sample session information displayed")
-
-### Task 6: Configure Continuous Delivery to the Kubernetes Cluster
+### Task 5: Configure Continuous Delivery to the Kubernetes Cluster
 
 In this task, you will use GitHub Actions to automate the process for deploying the web image to the AKS cluster using Helm. You will update the GitHub Action and configure a job so that when new images are pushed to the Azure Container Registry (ACR), the pipeline deploys the image to the AKS cluster. ACR can also host Helm charts.
 
@@ -1558,7 +1506,7 @@ In this task, you will use GitHub Actions to automate the process for deploying 
 
     ![The screenshot shows workflow is running and the current status.](media/2020-08-25-22-15-39.png "Workflow is running")
 
-### Task 7: Review Azure Monitor for Containers
+### Task 6: Review Azure Monitor for Containers
 
 In this task, you will access and review the various logs and dashboards made available by Azure Monitor for Containers.
 
@@ -1614,39 +1562,37 @@ At this point, you have deployed a single instance of the web and API service co
 | Overview of kubectl                        | https://kubernetes.io/docs/reference/kubectl/overview              |
 | Kubernetes: Services                       | https://kubernetes.io/docs/concepts/services-networking/service/   |
 
-### Task 1: Increase service instances from the Kubernetes dashboard
+### Task 1: Increase service instances from the Azure Portal
 
-In this task, you will increase the number of instances for the API deployment in the Kubernetes management dashboard. While it is deploying, you will observe the changing status.
+In this task, you will increase the number of instances for the API deployment in the AKS Azure Portal blade. While it is deploying, you will observe the changing status.
 
-1. Switch to the Kubernetes Dashboard. See Exerise 3, Task 1 if you need to create a Tunnel to access it again.
+1. In the AKS blade in the Azure Portal select **Workloads** and then select the **API** deployment.
 
-2. From the navigation menu, select **Workloads** -\> **Deployments**, and then select the **API** deployment.
+2. Select **YAML** in the window that loads and scroll down until you find **replicas**. Change the number of replicas to **2**, and then select **Review + save**. When prompted, check **Confirm manifest change** and select **Save**.
 
-3. Select the **SCALE** button in the upper-right. Change the number of replicas to **2**, and then select **Scale**.
+   ![In the edit YAML dialog, 2 is entered in the desired number of replicas.](media/k8s-deploy-scale.png "Setting replicas to 2")
 
-   ![In the Scale a Deployment dialog box, 2 is entered in the Desired number of pods box.](media/k8s-deploy-scale.png "Scale a Deployment dialog")
-
-   > **Note**: If the deployment completes quickly, you may not see the deployment Waiting states in the dashboard, as described in the following steps.
+   > **Note**: If the deployment completes quickly, you may not see the deployment Waiting states in the portal, as described in the following steps.
 
 3. From the Replica Set view for the API, you will see it is now deploying and that there is one healthy instance and one pending instance.
 
    ![Replica Sets is selected under Workloads in the navigation menu on the left, and at right, Pods status: 1 pending, 1 running is highlighted. Below that, a red arrow points at the API deployment in the Pods box.](media/image117.png "View replica details")
 
-4. From the navigation menu, select **Deployments** from the list. Note that the api service has a pending status indicated by the grey timer icon, and it shows a pod count 1 of 2 instances (shown as `1/2`).
+4. From the navigation menu, select **Workloads**. Note that the api Deployment has an alert and shows a pod count 1 of 2 instances (shown as `1/2`).
 
    ![In the Deployments box, the api service is highlighted with a grey timer icon at left and a pod count of 1/2 listed at right.](media/image118.png "View api active pods")
 
-   > **Note**: If you receive an error about insufficient CPU that is OK. We will see how to deal with this in the next Task.
+   > **Note**: If you receive an error about insufficient CPU that is OK. We will see how to deal with this in the next Task (Hint: you can use the **Insights** option in the AKS Azure Portal to review the **Node** status and view the Kubernetes event logs).
 
 5. From the Navigation menu, select **Workloads**. From this view, note that the health overview in the right panel of this view. You will see the following:
 
-   - One deployment and one replica set are each healthy for the api service.
+   - One Deployment and one Replica Set are each healthy for the web service.
 
-   - One replica set is healthy for the web service.
+   - The api Deployment and Replica Set are in a warning state.
 
-   - Three pods are healthy.
+   - Two pods are healthy in the 'default' namespace.
 
-6. Navigate to the Contoso Neuro Conference web application. The application should still work without errors as you navigate to Speakers and Sessions pages.
+6. Open the Contoso Neuro Conference web application. The application should still work without errors as you navigate to Speakers and Sessions pages.
 
    - Navigate to the `/stats` page. You will see information about the hosting environment including:
 
@@ -1664,120 +1610,76 @@ In this task, you will increase the number of instances for the API deployment i
 
      - **uptime:** The up time for the API service.
 
-   - Refresh the page in the browser, and you can see the hostName change between the two API service instances. The letters after `api-{number}-` in the hostname will change.
+### Task 2: Resolve failed provisioning of replicas
 
-### Task 2: Increase service instances beyond available resources
+In this task, you will resolve the failed API replicas. These failures occur due to the clusters' inability to meet the requested resources.
 
-In this task, you will try to increase the number of instances for the API service container beyond available resources in the cluster. You will observe how Kubernetes handles this condition and correct the problem.
+1. In the AKS blade in the Azure Portal select **Workloads** and then select the **API** deployment. Select the **YAML** navigation item.
 
-1. From the navigation menu, select **Deployments**. From this view, for the api deployment, select the vertical ellipses on the right of the screen and then select **Edit**.
+2. In the **YAML** screen scroll down and change the following items:
 
-2. In the **Edit a resource** dialog, select the YAML tab. You will see a list of settings shown in YAML format. Use the copy button to copy the text to your clipboard.
+   - Modify **ports** and remove the **hostPort**. Two Pods cannot map to the same host port.
 
-   ![Screenshot of the Edit a resource dialog box that displays JSON data.](media/api-deployment-edit.PNG "Edit a resource YAML config")
-
-3. Paste the contents into the text editor of your choice (such as Visual Studio Code).
-
-5. Scroll down about halfway to find the node `$.spec.template.spec.containers[0]`, as shown in the screenshot below.
-
-   ![Screenshot of the deployment code, with the $.spec.template.spec.containers[0] section highlighted.](media/image84.png "Container deployment configuration")
-
-6. The containers spec has a single entry for the API container at the moment. You will see that the name of the container is `api` - this is how you know you are looking at the correct container spec.
-
-   - Add the following snippet below the `name` property in the container spec:
-
-   ```yaml
+      ```yaml
       ports:
-         - hostPort: 3001
-           containerPort: 3001
-           protocol: TCP
-   ```
+         - containerPort: 3001
+         protocol: TCP
+      ```
 
-   - Your container spec should now look like this:
+   - Modify the **cpu** and set it to **100m**. CPU is divided between all Pods on a Node.
 
-   ![Screenshot of the deployment JSON code, with the $.spec.template.spec.containers[0] section highlighted, showing the updated values for containerPort and hostPort, both set to port 3001.](media/image85.png "View container ports")
+      ```yaml
+      resources:
+         requests:
+            cpu: 100m
+            memory: 128Mi
+      ```
 
-7. Copy the updated document from notepad into the clipboard. Return to the Kubernetes dashboard, which should still be viewing the **api** deployment.
+   Select **Review + save** and, when prompted, confirm the changes and select **Save**.
 
-   - Paste the updated document.
+   ![In the edit YAML dialog, showing two changes required.](media/2021-02-17_10-26-33.png "Modify deployment manifest")
 
-   - Select Update.
+3. Return to the **Workloads** main view on the AKS Azure Portal and you will now see that the Deployment is healthy with two Pods operating.
 
-   ![UPDATE is highlighted in the Edit a Deployment dialog box.](media/image88.png "Update API YAML")
-
-8. From the API deployment view, select **Scale**.
-
-9. Change the number of replicas to 4 and select **Scale**.
-
-   ![In the Scale a Deployment dialog box, 4 is entered in the Desired number of pods box.](media/image119.png "Scale a resource")
-
-10. From the navigation menu, select **Services** view under **Discovery and Load Balancing**. Select the **api** service from the **Services** list. From the api service view, you will see it has two healthy instances and two unhealthy (or possibly pending depending on timing) instances.
-
-    ![In the api service view, various information is displayed in the Details box and in the Pods box.](media/image120.png "View API service endpoints and pods")
-
-11. After a few minutes, select **Workloads** from the navigation menu. From this view, you should see an alert reported for the api deployment.
-
-    ![Workloads is selected in the navigation menu. At right, an exclamation point (!) appears next to the api deployment listing in the Deployments box.](media/image121.png "View deployment log")
-
-    > **Note**: This message indicates that there were not enough available resources to match the requirements for a new pod instance. In this case, this is because the instance requires port `3001`, and since there are only 2 nodes available in the cluster, only two api instances can be scheduled. The third and fourth pod instances will wait for a new node to be available that can run another instance using that port.
-
-12. Reduce the number of requested pods to `2` using the **Scale** button found on the vertical ellipses on the right of the screen for the `api` Deployment.
-
-13. Almost immediately, the warning message from the **Workloads** dashboard should disappear, and the **API** deployment will show `2/2` pods are running.
-
-    ![Workloads is selected in the navigation menu. A green check mark now appears next to the api deployment listing in the Deployments box at right.](media/image122.png "Review pods list")
+   ![In the Workload view with the API deployment highlighted.](media/2021-02-17_10-48-19.png "API deployment is now healthy")
 
 ### Task 3: Restart containers and test High Availability
 
 In this task, you will restart containers and validate that the restart does not impact the running service.
 
-1. From the navigation menu on the left, select **Services** view under **Discovery and Load Balancing**. From the **Services** list, select the external endpoint hyperlink for the web service, and visit the **Stats** page by adding / stats to the URL. Keep this open and handy to be refreshed as you complete the steps that follow.
-
-   ![In the Services box, the hyperlinked external endpoint for the web service is highlighted. ](media/image112.png "View the services external endpoint")
+1. Open the sample web application and navigate to the "Stats" page as shown.
 
    ![The Stats page is visible in this screenshot of the Contoso Neuro web application.](media/image123.png "Contoso web task details")
 
-2. From the navigation menu, select **Workloads** -> **Deployments**. From Deployments list, select the **API** deployment.
+2. In the AKS blade in the Azure Portal open the api Deployment and increase the required replica count to `4`. Use the same process as Exercise 4, Task 1.
 
-   ![In the left menu the Deployments item is selected. The API deployment is highlighted in the Deployments list box.](media/image124.png "API pod deployments")
+   ![In the left menu the Deployments item is selected. The API deployment is highlighted in the Deployments list box.](media/2021-02-17_10-53-46.png "API pod deployments")
 
-3. From the API deployment view, select **Scale** and from the dialog presented, and enter `4` for the desired number of pods. Select **OK**.
+3. After a few moments you will find that the API deployment is now running 4 replicas successfully.
 
-4. From the navigation menu, select **Workloads** -> **Replica Sets**. Select the **api** replica set, and from the **Replica Set** view, you will see that two pods cannot deploy.
-
-   ![Replica Sets is selected under Workloads in the navigation menu on the left. On the right are the Details and Pods boxes. In the Pods box, two pods have exclamation point (!) alerts and messages indicating that they cannot deploy.](media/image125.png "View failed pod deployment details")
-
-5. Return to the browser tab with the web application stats page loaded. Refresh the page over and over. You will not see any errors, but you will see the api host name change between the two api pod instances periodically. The task id and pid might also change between the two api pod instances.
+4. Return to the browser tab with the web application stats page loaded. Refresh the page over and over. You will not see any errors, but you will see the api host name change between the two api pod instances periodically. The task id and pid might also change between the two api pod instances.
 
    ![On the Stats page in the Contoso Neuro web application, two different api host name values are highlighted.](media/image126.png "View web task hostname")
 
-6. After refreshing enough times to see that the `hostName` value is changing, and the service remains healthy, return to the **Replica Sets** view for the API. From the navigation menu, select Replica Sets under Workloads and select the **API** replica set.
+6. After refreshing enough times to see that the `hostName` value is changing, and the service remains healthy, you can open the **Replica Sets** view for the API in the Azure Portal.
 
-7. From this view, take note that the hostName value shown in the web application stats page matches the pod names for the pods that are running.
+7. On this view you can see the hostName value shown in the web application stats page matches the pod names for the pods that are running.
 
-   ![Two different pod names are highlighted in the Pods box, which match the values from the previous Stats page.](media/image127.png "View two API pod details")
+   ![Viewing replica set in the Azure Portal.](media/image128.png "Viewing replica set in the Azure Portal")
 
-8. Note the remaining pods are still pending, since there are not enough port resources available to launch another instance. Make some room by deleting a running instance. Select the context menu and choose **Delete** for one of the healthy pods.
+8. Select two of the Pods at random and choose **Delete**.
 
-   ![The context menu for a pod in the pod list is expanded with the Delete item selected.](media/image128.png "Delete running pod instance")
+   ![The context menu for a pod in the pod list is expanded with the Delete item selected.](media/2021-02-17_11-04-35.png "Delete running pod instance")
 
-9. Once the running instance is gone, Kubernetes will be able to launch one of the pending instances. However, because you set the desired size of the deploy to 4, Kubernetes will add a new pending instance. Removing a running instance allowed a pending instance to start, but in the end, the number of pending and running instances is unchanged.
+9. Kubernetes will launch new Pods to meet the required replica count. Depending on your view you may see the old instances Terminating and new instances being Created.
 
-   ![The first row of the Pods box is highlighted, and the pod has a green check mark and is running.](media/image129.png "API pod running")
+   ![The first row of the Pods box is highlighted, and the pod has a green check mark and is running.](media/2021-02-17_11-05-59.png "API Pods changing state")
 
-10. From the navigation menu, select **Deployments** under **Workloads**. From the view's Deployments list, select the **API** deployment.
+10. Return to the API Deployment and scale it back to `1` replica. See Step 2 above for how to do this if you are unsure.
 
-11. From the API Deployment view, select Scale and enter `1` as the desired number of pods. Select **OK**.
-
-    ![In the Scale a Deployment dialog box, 1 is entered in the Desired number of pods box.](media/image130.png "Scale replicas to one")
-
-12. Return to the web site's stats page in the browser and refresh while this is scaling down. You will notice that only one API host name shows up, even though you may still see several running pods in the API replica set view. Even though several pods are running, Kubernetes will no longer send traffic to the pods it has selected to scale down. In a few moments, only one pod will show in the API replica set view.
+11. Return to the sample web site's stats page in the browser and refresh while Kubernetes is scaling down the number of Pods. You will notice that only one API host name shows up, even though you may still see several running pods in the API replica set view. Even though several pods are running, Kubernetes will no longer send traffic to the pods it has selected to terminate. In a few moments, only one pod will show in the API Replica Set view.
 
     ![Replica Sets is selected under Workloads in the navigation menu on the left. On the right are the Details and Pods boxes. Only one API host name, which has a green check mark and is listed as running, appears in the Pods box.](media/image131.png "View replica details")
-
-13. From the navigation menu, select **Workloads**. From this view, note that there is only one API pod now.
-
-    ![Workloads is selected in the navigation menu on the left. On the right are the Deployment, Pods, and Replica Sets boxes.](media/image132.png "View only one replica")
 
 ### Task 4: Configure Cosmos DB Autoscale
 
@@ -1857,7 +1759,7 @@ In this task, you will run a performance test script that will test the Autoscal
 
 **Duration**: 1 hour
 
-In the previous exercise with Kubernetes, we introduced a restriction to the scale properties of the service. In this exercise, you will configure the api deployment to create pods that use dynamic port mappings to eliminate the port resource constraint during scale activities.
+In the previous exercise with Kubernetes, we removed restrictions to the scale properties of the service. In this exercise, you will configure the api deployment to create pods that use dynamic port mappings to eliminate the port resource constraint during scale activities.
 
 Kubernetes services can discover the ports assigned to each pod, allowing you to run multiple instances of the pod on the same agent node --- something that is not possible when you configure a specific static port (such as the 3001 mapping for the API service that we put in place in the last Exercise).
 
@@ -1874,49 +1776,21 @@ Kubernetes services can discover the ports assigned to each pod, allowing you to
 | Kubernetes: cert-manager                                              | https://cert-manager.io/docs/installation/kubernetes/ |
 
 
-### Task 1: Scale a service without port constraints
+### Task 1: Update an external service to support dynamic discovery with a load balancer
 
-In this task, we will reconfigure the API deployment so that it will produce pods that choose a dynamic hostPort for improved scalability.
+In this task, you will update the web service so that it supports dynamic discovery through an Azure load balancer.
 
-1. In the Kubernetes Dashboard, on the navigation menu select **Deployments** under **Workloads**. From the eployments list, select the **API** deployment.
+1. From AKS **Kubernetes resources** menu, select **Deployments** under **Workloads**. From the list select the **web** deployment.
 
-2. Select **Edit**.
+2. Select **YAML**, then select the **JSON** tab.
 
-3. From the **Edit a resource** dialog, do the following:
+3. First locate the replicas node and update the required count to `4`.
 
-   - Scroll to the first spec node that describes replicas as shown in the screenshot. Set the value for replicas to `4`.
-
-   - Within the replicas spec, beneath the template node, find the **api** containers spec. Remove the `hostPort` entry for the API container's port mapping.  The screenshot below shows the desired configuration after editing.
-
-   - Within the resources, beneath the template node, find the **cpu** under requests. Update this to `100m` so the **api** instances use less than a full CPU core.
-
-     ![This is a screenshot of the Edit a Resource dialog box with various displayed information about spec, selector, and template. Under the spec node, replicas: 4 is highlighted. Further down, ports are highlighted.](media/image137.png "Edit cpu value in YAML")
-
-     ![This is a screenshot of the Edit a Resource dialog box with the cpu information set.](media/image137b.png "Updated cpu value shown")
-
-4. Select **Update**. New pods will now choose a dynamic host port.
-
-5. The API service can now scale to 4 pods since it is no longer constrained to an instance per node and a full cpu core per instance -- a previous limitation while using port `3001`.
-
-   ![Replica Sets is selected under Workloads in the navigation menu on the left. On the right, four pods are listed in the Pods box, and all have green check marks and are listed as Running.](media/image138.png "Replica Pods listed")
-
-6. Return to the browser and refresh the stats page. You should see all 4 pods serve responses as you refresh.
-
-### Task 2: Update an external service to support dynamic discovery with a load balancer
-
-In this task, you will update the web service so that it supports dynamic discovery through the Azure load balancer.
-
-1. From the navigation menu, select **Deployments** under **Workloads**. From the view's Deployments list, select the **web** deployment.
-
-2. Select **Edit**, then in the **Edit a resource** dialog select the **JSON** tab.
-
-3. Scroll to the web containers spec as shown in the screenshot. Remove the hostPort entry for the web container's port mapping.
+3. Next, scroll to the web containers spec as shown in the screenshot. Remove the hostPort entry for the web container's port mapping.
 
    ![This is a screenshot of the Edit a Deployment dialog box with various displayed information about spec, containers, ports, and env. The ports node, containerPort: 3001 and protocol: TCP are highlighted.](media/image140.png "Remove web container hostPort entry")
 
-4. Select **Update**.
-
-5. From the **web** Deployments view, select **Scale**. From the dialog presented enter 4 as the desired number of pods and select **OK**.
+4. Select **Review + save** and then confirm the change and **Save**.
 
 6. Check the status of the scale out by refreshing the web deployment's view. From the navigation menu, select **Pods** from under Workloads. Select the **web** pods. From this view, you should see an error like that shown in the following screenshot.
 
@@ -1924,19 +1798,15 @@ In this task, you will update the web service so that it supports dynamic discov
 
 Like the API deployment, the web deployment used a fixed _hostPort_, and your ability to scale was limited by the number of available agent nodes. However, after resolving this issue for the web service by removing the _hostPort_ setting, the web deployment is still unable to scale past two pods due to CPU constraints. The deployment is requesting more CPU than the web application needs, so you will fix this constraint in the next task.
 
-### Task 3: Adjust CPU constraints to improve scale
+### Task 2: Adjust CPU constraints to improve scale
 
 In this task, you will modify the CPU requirements for the web service so that it can scale out to more instances.
 
-1. From the navigation menu, select **Deployments** under **Workloads**. From the view's Deployments list, select the **web** deployment.
-
-2. Select the vertical ellipses, then select **Edit**.
-
-3. From the **Edit a resource** dialog, select the **JSON** tab, then find the **cpu** resource requirements for the web container. Change this value to `125m`.
+1. Re-open the JSON view for the web deployment and then find the **cpu** resource requirements for the web container. Change this value to `125m`.
 
    ![This is a screenshot of the Edit a Deployment dialog box with various displayed information about ports, env, and resources. The resources node, with cpu: 125m selected, is highlighted.](media/image142.png "Change cpu value")
 
-4. Select **Update** to save the changes and update the deployment.
+4. Select **Review + save**, confirm the change and then select **Save** to update the deployment.
 
 5. From the navigation menu, select **Replica Sets** under **Workloads**. From the view's Replica Sets list select the web replica set.
 
@@ -1944,9 +1814,9 @@ In this task, you will modify the CPU requirements for the web service so that i
 
    ![Four web pods are listed in the Pods box, and all have green check marks and are listed as Running.](media/image143.png "Four pods running")
 
-7. Return to the browser tab with the web application loaded. Refresh the stats page at /stats to watch the display update to reflect the different api pods by observing the host name refresh.
+7. Return to the browser tab with the sample web application loaded. Refresh the stats page at /stats to watch the display update to reflect the different api pods by observing the host name refresh.
 
-### Task 4: Perform a rolling update
+### Task 3: Perform a rolling update
 
 In this task, you will edit the web application source code to add Application Insights and update the Docker image used by the deployment. Then you will perform a rolling update to demonstrate how to deploy a code change.
 
@@ -1995,7 +1865,7 @@ In this task, you will edit the web application source code to add Application I
 
 7. Visit the `content-web` Action for your GitHub Fabmedical repository and see the new Image being deployed into your Kubernetes cluster.
 
-8. While this update runs, return the Kubernetes management dashboard in the browser.
+8. While this update runs, return the Azure Portal in the browser.
 
 9. From the navigation menu, select **Replica Sets** under **Workloads**. From this view, you will see a new replica set for the web, which may still be in the process of deploying (as shown below) or already fully deployed.
 
@@ -2043,11 +1913,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
     --set controller.admissionWebhooks.patch.nodeSelector."beta\.kubernetes\.io/os"=linux
    ```
 
-4. From the Kubernetes dashboard, change the Namespace filter and set ir to **All namespaces**. It will likely read **default** as shown below.
-
-   ![A screenshot of the Kubernetes management dashboard showing the default Namespace selected.](media/image-namespace.png "Default namespace selected")
-
-5. Under **Discovery and Load Balancing**, select **Services**, then copy the IP Address for the **External endpoints** for the `nginx-ingress-RANDOM-nginx-ingress` service.
+4. In the Azure Portal under **Services and ingresses** copy the IP Address for the **External IP** for the `nginx-ingress-RANDOM-nginx-ingress` service.
 
    ![A screenshot of the Kubernetes management dashboard showing the ingress controller settings.](media/Ex4-Task5.5.png "Copy ingress controller settings")
 
@@ -2061,7 +1927,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 
 6. Open the [Azure Portal Resource Groups blade](https://portal.azure.com/?feature.customPortal=false#blade/HubsExtension/BrowseResourceGroups) and locate the Resource Group that was automatically created to host the Node Pools for AKS. It will have the naming format of `MC_fabmedical-[SUFFIX]_fabmedical-[SUFFIX]_[REGION]`.
 
-7. Within the Azure Cloud Shell, create a script to update the public DNS name for the IP.
+7. Within the Azure Cloud Shell, create a script to update the public DNS name for the ingress external IP.
 
    ```bash
    code update-ip.sh
@@ -2213,41 +2079,41 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 
 17. Now you can create an ingress resource for the content applications.
 
-    ```bash
-    code content.ingress.yml
-    ```
+   ```bash
+   code content.ingress.yml
+   ```
 
     Use the following as the contents and update the `[SUFFIX]` and `[AZURE-REGION]` to match your ingress DNS name:
 
-    ```yaml
-      apiVersion: networking.k8s.io/v1beta1
-      kind: Ingress
-      metadata:
-         name: content-ingress
-         annotations:
-            kubernetes.io/ingress.class: nginx
-            nginx.ingress.kubernetes.io/rewrite-target: /$1
-            nginx.ingress.kubernetes.io/use-regex: "true"
-            nginx.ingress.kubernetes.io/ssl-redirect: "false"
-            cert-manager.io/cluster-issuer: letsencrypt-prod
-      spec:
-         tls:
-         - hosts:
-            - fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
-            secretName: tls-secret
-         rules:
-         - host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
-            http:
-               paths:
-               - backend:
+   ```yaml
+   apiVersion: networking.k8s.io/v1beta1
+   kind: Ingress
+   metadata:
+      name: content-ingress
+      annotations:
+         kubernetes.io/ingress.class: nginx
+         nginx.ingress.kubernetes.io/rewrite-target: /$1
+         nginx.ingress.kubernetes.io/use-regex: "true"
+         nginx.ingress.kubernetes.io/ssl-redirect: "false"
+         cert-manager.io/cluster-issuer: letsencrypt-prod
+   spec:
+      tls:
+      - hosts:
+         - fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         secretName: tls-secret
+      rules:
+         - host: fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         http:
+            paths:
+            - path: /(.*)
+               backend:
                   serviceName: web
                   servicePort: 80
-               path: /(.*)
-               - backend:
+            - path: /content-api/(.*)
+               backend:            
                   serviceName: api
                   servicePort: 3001
-               path: /content-api/(.*)
-    ```
+   ```
 
 18. Save changes and close the editor.
 
@@ -2318,52 +2184,52 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
 
 12. In Azure Cloud Shell open the ingress deployment you created in Step 17 of the last Task. We will add a host entry so that requests using the Traffic Manager hostname work without needing to specificy a host header that maps to the ingress hostname.
 
-    ```bash
+   ```bash
     code content.ingress.yml
-    ```
+   ```
 
     Use the following as the contents and update the `[SUFFIX]` and `[AZURE-REGION]` to match your ingress DNS name:
 
-    ```yaml
-      apiVersion: networking.k8s.io/v1beta1
-      kind: Ingress
-      metadata:
-         name: content-ingress
-         annotations:
-            kubernetes.io/ingress.class: nginx
-            nginx.ingress.kubernetes.io/rewrite-target: /$1
-            nginx.ingress.kubernetes.io/use-regex: "true"
-            nginx.ingress.kubernetes.io/ssl-redirect: "false"
-            cert-manager.io/cluster-issuer: letsencrypt-prod
-      spec:
-         tls:
+   ```yaml
+   apiVersion: networking.k8s.io/v1beta1
+   kind: Ingress
+   metadata:
+      name: content-ingress
+      annotations:
+         kubernetes.io/ingress.class: nginx
+         nginx.ingress.kubernetes.io/rewrite-target: /$1
+         nginx.ingress.kubernetes.io/use-regex: "true"
+         nginx.ingress.kubernetes.io/ssl-redirect: "false"
+         cert-manager.io/cluster-issuer: letsencrypt-prod
+   spec:
+      tls:
          - hosts:
-            - fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
-            secretName: tls-secret
-         rules:
-         - host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
-            http:
-               paths:
-               - backend:
+         - fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         secretName: tls-secret
+      rules:
+         - host: fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         http:
+            paths:
+               - path: /(.*)
+               backend:
                   serviceName: web
                   servicePort: 80
-               path: /(.*)
-               - backend:
+               - path: /content-api/(.*)
+               backend:            
                   serviceName: api
                   servicePort: 3001
-               path: /content-api/(.*)
-         - host: fabmedical-[SUFFIX].trafficmanager.net
-            http:
-               paths:
-               - backend:
+         - host: fabmedical-sjw.trafficmanager.net
+         http:
+            paths:
+               - path: /(.*)
+               backend:
                   serviceName: web
                   servicePort: 80
-               path: /(.*)
-               - backend:
+               - path: /content-api/(.*)
+               backend:            
                   serviceName: api
                   servicePort: 3001
-               path: /content-api/(.*)
-    ```
+   ```
 
       Save the file and apply the changes to your AKS cluster by issuing the following command.
 
