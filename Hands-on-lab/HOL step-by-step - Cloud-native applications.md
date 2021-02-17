@@ -55,11 +55,10 @@ Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/int
     - [Task 5: Test Cosmos DB Autoscale](#task-5-test-cosmos-db-autoscale)
   - [Exercise 5: Working with services and routing application traffic](#exercise-5-working-with-services-and-routing-application-traffic)
     - [Task 1: Scale a service without port constraints](#task-1-scale-a-service-without-port-constraints)
-    - [Task 2: Update an external service to support dynamic discovery with a load balancer](#task-2-update-an-external-service-to-support-dynamic-discovery-with-a-load-balancer)
-    - [Task 3: Adjust CPU constraints to improve scale](#task-3-adjust-cpu-constraints-to-improve-scale)
-    - [Task 4: Perform a rolling update](#task-4-perform-a-rolling-update)
-    - [Task 5: Configure Kubernetes Ingress](#task-5-configure-kubernetes-ingress)
-    - [Task 6: Multi-region Load Balancing with Traffic Manager](#task-6-multi-region-load-balancing-with-traffic-manager)
+    - [Task 2: Adjust CPU constraints to improve scale](#task-2-adjust-cpu-constraints-to-improve-scale)
+    - [Task 3: Perform a rolling update](#task-3-perform-a-rolling-update)
+    - [Task 4: Configure Kubernetes Ingress](#task-4-configure-kubernetes-ingress)
+    - [Task 5: Multi-region Load Balancing with Traffic Manager](#task-5-multi-region-load-balancing-with-traffic-manager)
   - [After the hands-on lab](#after-the-hands-on-lab)
 <!-- /TOC -->
 
