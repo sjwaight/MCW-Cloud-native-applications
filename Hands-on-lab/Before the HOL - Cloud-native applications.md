@@ -43,7 +43,7 @@ The names of manufacturers, products, or URLs are provided for informational pur
 
 ## Requirements
 
-1. Microsoft Azure subscription must be pay-as-you-go or MSDN.
+1. Microsoft Azure subscription must be pay-as-you-go, MSDN or an Azure Pass.
 
    - Trial Azure Subscriptions will _not_ work.
 
