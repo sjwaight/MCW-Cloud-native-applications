@@ -41,12 +41,11 @@ Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/int
     - [Task 2: Provision Azure Database Migration Service](#task-2-provision-azure-database-migration-service)
     - [Task 3: Migrate data to Azure Cosmos DB](#task-3-migrate-data-to-azure-cosmos-db)
   - [Exercise 3: Deploy the solution to Azure Kubernetes Service](#exercise-3-deploy-the-solution-to-azure-kubernetes-service)
-    - [Task 1: Tunnel into the Azure Kubernetes Service cluster](#task-1-tunnel-into-the-azure-kubernetes-service-cluster)
-    - [Task 2: Deploy a service using the Kubernetes management dashboard](#task-2-deploy-a-service-using-the-kubernetes-management-dashboard)
-    - [Task 3: Deploy a service using kubectl](#task-3-deploy-a-service-using-kubectl)
-    - [Task 4: Deploy a service using a Helm chart](#task-4-deploy-a-service-using-a-helm-chart)
-    - [Task 5: Configure Continuous Delivery to the Kubernetes Cluster](#task-5-configure-continuous-delivery-to-the-kubernetes-cluster)
-    - [Task 6: Review Azure Monitor for Containers](#task-6-review-azure-monitor-for-containers)
+    - [Task 1: Deploy a service using the Azure Portal](#task-1-deploy-a-service-using-the-azure-portal)
+    - [Task 2: Deploy a service using kubectl](#task-2-deploy-a-service-using-kubectl)
+    - [Task 3: Deploy a service using a Helm chart](#task-3-deploy-a-service-using-a-helm-chart)
+    - [Task 4: Configure Continuous Delivery to the Kubernetes Cluster](#task-4-configure-continuous-delivery-to-the-kubernetes-cluster)
+    - [Task 5: Review Azure Monitor for Containers](#task-5s-review-azure-monitor-for-containers)
   - [Exercise 4: Scale the application and test High Availability](#exercise-4-scale-the-application-and-test-high-availability)
     - [Task 1: Increase service instances from the Azure Portal](#task-1-increase-service-instances-from-the-azure-portal)
     - [Task 2: Resolve failed provisioning of replicas](#task-2-resolve-failed-provisioning-of-replicas)
@@ -1062,7 +1061,7 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
     ![This is a screenshot of the Kubernetes management dashboard showing logs output.](media/2021-02-16_16-23-27.png "API Logs")
 
-### Task 3: Deploy a service using kubectl
+### Task 2: Deploy a service using kubectl
 
 In this task, deploy the web application and expose it to the Internet via a Kubernetes LoadBalancer service. You will be using the Kubernetes command line `kubectl` to complete these steps.
 
@@ -1194,7 +1193,7 @@ In this task, deploy the web application and expose it to the Internet via a Kub
 
     ![A screenshot of the web site showing no data displayed.](media/Ex2-Task3.11.png "Web site home page")
 
-### Task 4: Deploy a service using a Helm chart
+### Task 3: Deploy a service using a Helm chart
 
 In this task, you will deploy the **content-web** service using a [Helm](https://helm.sh/) chart to streamline the installing and managing the container-based application on the AKS cluster.
 
@@ -1378,7 +1377,7 @@ In this task, you will deploy the **content-web** service using a [Helm](https:/
     git push
     ```
 
-### Task 5: Configure Continuous Delivery to the Kubernetes Cluster
+### Task 4: Configure Continuous Delivery to the Kubernetes Cluster
 
 In this task, you will use GitHub Actions to automate the process for deploying the web image to the AKS cluster using Helm. You will update the GitHub Action and configure a job so that when new images are pushed to the Azure Container Registry (ACR), the pipeline deploys the image to the AKS cluster. ACR can also host Helm charts.
 
@@ -1505,7 +1504,7 @@ In this task, you will use GitHub Actions to automate the process for deploying 
 
     ![The screenshot shows workflow is running and the current status.](media/2020-08-25-22-15-39.png "Workflow is running")
 
-### Task 6: Review Azure Monitor for Containers
+### Task 5: Review Azure Monitor for Containers
 
 In this task, you will access and review the various logs and dashboards made available by Azure Monitor for Containers.
 
