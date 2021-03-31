@@ -1873,7 +1873,7 @@ In this task, you will edit the web application source code to add Application I
 
     ![On the Stats page, the hostName is highlighted.](media/image145.png "On Stats page hostName is displayed")
 
-### Task 5: Configure Kubernetes Ingress
+### Task 4: Configure Kubernetes Ingress
 
 In this task you will setup a Kubernetes Ingress using an [nginx proxy server](https://nginx.org/en/) to take advantage of path-based routing and TLS termination.
 
@@ -2131,7 +2131,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
 
     > It can take between 5 and 30 minutes before the SSL site becomes available. This is due to the delay involved with provisioning a TLS cert from letsencrypt.
 
-### Task 6: Multi-region Load Balancing with Traffic Manager
+### Task 5: Multi-region Load Balancing with Traffic Manager
 
 In this task, you will setup Azure Traffic Manager as a multi-region load balancer. This will enable you to provision an AKS instance of the app in a secondary Azure region with load balancing between the two regions.
 
