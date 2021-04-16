@@ -34,8 +34,9 @@ The names of manufacturers, products, or URLs are provided for informational pur
     - [Task 5: Create a Service Principal](#task-5-create-a-service-principal)
     - [Task 6: Deploy ARM Template](#task-6-deploy-arm-template)
     - [Task 7: Create a GitHub repository](#task-7-create-a-github-repository)
-    - [Task 8: Clone Repositories to the Build Agent](#task-8-clone-repository-to-your-lab-virtual-machine)
-    - [Task 9: Optional - Setup Visual Studio Code Remote Development](#task-9-optional---setup-visual-studio-code-remote-development)
+    - [Task 8: Clone Repositories to the Build Agent](#task-8-clone-repositories-to-the-build-agent)
+    - [Task 9: Stop Build Agent and AKS Cluster](#task-9-stop-build-agent-and-aks-cluster)
+    - [Task 10: Optional - Setup Visual Studio Code Remote Development](#task-10-optional---setup-visual-studio-code-remote-development)
 
 <!-- /TOC -->
 
@@ -359,7 +360,7 @@ FabMedical has provided starter files for you. They have taken a copy of the web
 
 14. Refresh your GitHub repository, you should now see the code published.
 
-### Task 8: Clone repository to your lab Virtual Machine
+### Task 8: Clone Repositories to the Build Agent
 
 In this task, you clone your newly created repository from GitHub so you can work with them on the lab VM.
 
@@ -411,11 +412,32 @@ In this task, you clone your newly created repository from GitHub so you can wor
    > sudo chown -R $USER:$(id -gn $USER) /home/adminfabmedical/.config
    > ```
 
+
 **You are now ready to start with the main labs!**
 
  - [Start Now!](HOL%20step-by-step%20-%20Cloud-native%20applications.md) 
 
-### Task 9: Optional - Setup Visual Studio Code Remote Development
+ ***
+
+### Task 9: Stop Build Agent and AKS Cluster
+
+If you are setting up well in advance of your lab you may wish to stop both your Build Agent VM along with your AKS Cluster. This will remove compute charges until you restart both.
+
+You can use the following commands at your Azure Cloud Shell commandline to achieve this. Replace {} with appropriate values based on your previous deployment.
+
+   ```bash
+   az vm deallocate --resource-group {resourceGroup} --name {buildAgentVMName}
+   ```
+
+   ```bash
+   az aks stop --resource-group {resourceGroup} --name {aksClusterName}
+   ```
+
+In order to start these resources you can use the `start` command (simply replace the `stop` in the above commands).
+
+Note that the IP addresses assigned to these two resources will change when they are started again. When stopping and AKS Cluster you will find that the Node Count drops to zero for all Node Pools.
+
+### Task 10: Optional - Setup Visual Studio Code Remote Development
 
 This step is not required to complete the labs, but it may make some activities easier to complete.
 
