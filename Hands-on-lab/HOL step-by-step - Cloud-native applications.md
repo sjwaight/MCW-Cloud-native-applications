@@ -910,54 +910,56 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
    kind: Deployment
    metadata:
    labels:
-         app: api
+      app: api
    name: api
    spec:
    replicas: 1
    selector:
-         matchLabels:
+      matchLabels:
          app: api
    strategy:
-         rollingUpdate:
-         maxSurge: 1
-         maxUnavailable: 1
-         type: RollingUpdate
+      rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+      type: RollingUpdate
    template:
-         metadata:
+      metadata:
          labels:
                app: api
          name: api
-         spec:
+      spec:
          containers:
-         - image: [LOGINSERVER].azurecr.io/content-api
+         - name: api 
+            image: [LOGINSERVER].azurecr.io/content-api
+            imagePullPolicy: Always
+            securityContext:
+               privileged: false
+            ports:
+            - containerPort: 3001
+               hostPort: 3001
+               protocol: TCP
             livenessProbe:
                httpGet:
-                  path: /
-                  port: 3001
+               path: /
+               port: 3001
                initialDelaySeconds: 30
                periodSeconds: 20
                timeoutSeconds: 10
                failureThreshold: 3
-            imagePullPolicy: Always
-            name: api
-            ports:
-               - containerPort: 3001
-               hostPort: 3001
-               protocol: TCP
             resources:
                requests:
                   cpu: 1
                   memory: 128Mi
-            securityContext:
-               privileged: false
-            terminationMessagePath: /dev/termination-log
-            terminationMessagePolicy: File
+         terminationMessagePath: /dev/termination-log
+         terminationMessagePolicy: File
          dnsPolicy: ClusterFirst
          restartPolicy: Always
          schedulerName: default-scheduler
          securityContext: {}
          terminationGracePeriodSeconds: 30
    ```
+
+> Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task1-deployment.yaml) and use the file as your template. Make sure to update [LOGINSERVER]!
 
 4. Select **Add** to initiate the deployment. This can take a few minutes after which you will see the deployment listed.
 
