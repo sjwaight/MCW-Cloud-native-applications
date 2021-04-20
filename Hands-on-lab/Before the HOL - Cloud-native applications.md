@@ -302,16 +302,6 @@ FabMedical has provided starter files for you. They have taken a copy of the web
    cd ~/MCW-Cloud-native-applications/Hands-on-lab/lab-files/developer/
    ls
    ```
-
-   > **Important note**: If you are completing the Infrastructure edition of the lab, instead of using the above instructions, type the following ones:
-   >
-   > ```bash
-   > cd ~/MCW-Cloud-native-applications/Hands-on-lab/lab-files/infrastructure/
-   > ls
-   > ```
-   >
-   > This will take you to the version of the starter files that will be used by that edition of the lab.
-
 8. You'll see the listing includes three folders, one for the web site, another for the content API and one to initialize API data:
 
    ```bash
