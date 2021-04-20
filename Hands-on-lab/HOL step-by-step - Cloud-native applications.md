@@ -877,23 +877,22 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
       apiVersion: v1
       kind: Service
       metadata:
-      labels:
-         app: api
-      name: api
+         labels:
+            app: api
+         name: api
       spec:
-      ports:
-         - name: api-traffic
-            port: 3001
-            protocol: TCP
-            targetPort: 3001
+         ports:
+            - name: api-traffic
+               port: 3001
+               protocol: TCP
+               targetPort: 3001
       selector:
-      app: api
+         app: api
       sessionAffinity: None
       type: ClusterIP
    ```
 
    > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task1-service.yaml) and use the file as your template. 
-
 
 3. Now select **Workloads** under the **Kubernetes resources** section in the left navigation.
 
@@ -903,20 +902,20 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
    ![Selecing + Add to create a deployment.](media/2021-02-16_14-12-50.png "Selecing + Add to create a deployment")
 
-3. In the **Add with YAML** screen that loads paste the following YAML and update the 
+3. In the **Add with YAML** screen that loads paste the following YAML and update [LOGINSERVER] value to match your Azure Container Registry.
 
    ```yaml
    apiVersion: apps/v1
    kind: Deployment
    metadata:
-   labels:
-      app: api
-   name: api
-   spec:
-   replicas: 1
-   selector:
-      matchLabels:
+      labels:
          app: api
+      name: api
+   spec:
+      replicas: 1
+      selector:
+         matchLabels:
+            app: api
    strategy:
       rollingUpdate:
       maxSurge: 1
@@ -925,38 +924,38 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
    template:
       metadata:
          labels:
-               app: api
+            app: api
          name: api
       spec:
          containers:
-         - name: api 
-            image: [LOGINSERVER].azurecr.io/content-api
-            imagePullPolicy: Always
-            securityContext:
-               privileged: false
-            ports:
-            - containerPort: 3001
-               hostPort: 3001
-               protocol: TCP
-            livenessProbe:
-               httpGet:
-               path: /
-               port: 3001
-               initialDelaySeconds: 30
-               periodSeconds: 20
-               timeoutSeconds: 10
-               failureThreshold: 3
-            resources:
-               requests:
-                  cpu: 1
-                  memory: 128Mi
-         terminationMessagePath: /dev/termination-log
-         terminationMessagePolicy: File
-         dnsPolicy: ClusterFirst
-         restartPolicy: Always
-         schedulerName: default-scheduler
-         securityContext: {}
-         terminationGracePeriodSeconds: 30
+            - name: api 
+               image: [LOGINSERVER].azurecr.io/content-api
+               imagePullPolicy: Always
+               securityContext:
+                  privileged: false
+               ports:
+                  - containerPort: 3001
+                     hostPort: 3001
+                     protocol: TCP
+               livenessProbe:
+                  httpGet:
+                     path: /
+                     port: 3001
+                  initialDelaySeconds: 30
+                  periodSeconds: 20
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+               resources:
+                  requests:
+                     cpu: 1
+                     memory: 128Mi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
    ```
 
 > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task1-deployment.yaml) and use the file as your template. Make sure to update [LOGINSERVER]!
@@ -1015,7 +1014,10 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
       db: <base64 encoded value>
     ```
 
-    ![This is a screenshot of the Azure Portal for AKS howing the YAML file for creating a deployment.](media/2021-02-16_14-52-33.png "Upload YAML data")
+> Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task1-secret.yaml) and use the file as your template. Make sure to update <base64 encoded value>!
+
+
+   ![This is a screenshot of the Azure Portal for AKS howing the YAML file for creating a deployment.](media/2021-02-16_14-52-33.png "Upload YAML data")
 
 14. Sort the Secrets list by name and you should now see your new secret displayed. 
 
@@ -1025,11 +1027,13 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 
     ![This is a screenshot of the Azure Portal for AKS showing the value of a secret.](media/2021-02-16_14-59-17.png "View cosmosdb secret")
 
-16. Next, download the api deployment configuration using the following command in your Azure Cloud Shell window:
+16. Next, download the API deployment configuration using the following commands in your Azure Cloud Shell window. First we must setup kubectl so it is authorised to talk to our AKS cluster. Replace the resource group and cluster placeholders so they match yours.
 
-    ```bash
-    kubectl get -o=yaml deployment api > api.deployment.yml
-    ```
+   ```bash
+   az aks get-credentials--resource-group {resourceGroup} --name {aksClusterName}
+
+   kubectl get -o=yaml deployment api > api.deployment.yml
+   ```
 
 17. Edit the downloaded file using cloud shell code editor:
 
