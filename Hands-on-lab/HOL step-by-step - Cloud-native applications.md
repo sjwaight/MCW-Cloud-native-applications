@@ -874,23 +874,26 @@ In this task, you will deploy the API application to the Azure Kubernetes Servic
 2. In the **Add with YAML** screen, paste following YAML and choose **Add**.
 
    ```yaml
-   apiVersion: v1
-   kind: Service
-   metadata:
-   labels:
+      apiVersion: v1
+      kind: Service
+      metadata:
+      labels:
+         app: api
+      name: api
+      spec:
+      ports:
+         - name: api-traffic
+            port: 3001
+            protocol: TCP
+            targetPort: 3001
+      selector:
       app: api
-   name: api
-   spec:
-   ports:
-      - name: api-traffic
-         port: 3001
-         protocol: TCP
-         targetPort: 3001
-   selector:
-      app: api
-   sessionAffinity: None
-   type: ClusterIP
+      sessionAffinity: None
+      type: ClusterIP
    ```
+
+   > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task1-service.yaml) and use the file as your template. 
+
 
 3. Now select **Workloads** under the **Kubernetes resources** section in the left navigation.
 
