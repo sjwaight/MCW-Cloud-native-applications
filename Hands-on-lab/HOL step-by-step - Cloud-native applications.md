@@ -251,7 +251,7 @@ This Dockerfile describes a multi-stage build of the following:
 
 In this task, you will create local Docker images for the application --- one for the API application and another for the web application. Each image will be created via Docker commands that rely on a Dockerfile.
 
-1. From SSH prompt connected to the lab VM, type the following command to view any Docker images on the VM. The list will only contain the MongoDB image downloaded earlier.
+1. From SSH prompt connected to the lab VM, type the following command to view any Docker images on the VM.
 
    ```bash
    docker image ls
