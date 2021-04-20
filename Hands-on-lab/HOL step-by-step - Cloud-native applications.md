@@ -18,7 +18,7 @@ Microsoft may have patents, patent applications, trademarks, copyrights, or othe
 
 The names of manufacturers, products, or URLs are provided for informational purposes only and Microsoft makes no representations and warranties, either expressed, implied, or statutory, regarding these manufacturers or the use of the products with any Microsoft technologies. The inclusion of a manufacturer or product does not imply endorsement of Microsoft of the manufacturer or product. Links may be provided to third party sites. Such sites are not under the control of Microsoft and Microsoft is not responsible for the contents of any linked site or any link contained in a linked site, or any changes or updates to such sites. Microsoft is not responsible for webcasting or any other form of transmission received from any linked site. Microsoft is providing these links to you only as a convenience, and the inclusion of any link does not imply endorsement of Microsoft of the site or the products contained therein.
 
-© 2020 Microsoft Corporation. All rights reserved.
+© 2021 Microsoft Corporation. All rights reserved.
 
 Microsoft and the trademarks listed at https://www.microsoft.com/en-us/legal/intellectualproperty/Trademarks/Usage/General.aspx are trademarks of the Microsoft group of companies. All other trademarks are property of their respective owners.
 
@@ -849,7 +849,7 @@ In this task, you will create a **Migration project** within Azure Database Migr
 
 In this exercise, you will use a combination of the Kubernetes commandline "kubectl" and the Azure Portal to deploy the containerized application to the cluster.
 
-> **Note:** starting with Kubernetes 1.18 the default Kubernetes dashboard is no longer available by default in AKS. You can choose to install and run it on a Pod if that is your preferred method of management.s
+> **Note:** starting with Kubernetes 1.18 the standard Kubernetes dashboard is no longer available by default in AKS. You can choose to install and run it on a Pod if that is your preferred method of management.
 
 ### Help references
 
@@ -866,7 +866,6 @@ In this exercise, you will use a combination of the Kubernetes commandline "kube
 ### Task 1: Deploy a service using the Azure Portal
 
 In this task, you will deploy the API application to the Azure Kubernetes Service cluster using the Azure Portal.
-
 
 1. We first need to define a Service for our API so that the applicaton is accessible within the cluster. In the AKS blade in the Azure Portal select **Services and ingresses** and on the Services tab select **+ Add**.
 
