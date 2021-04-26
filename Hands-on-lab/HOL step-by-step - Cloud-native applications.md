@@ -105,11 +105,11 @@ Each tenant will have the following containers:
 
 2. Local machine or a virtual machine configured with:
 
-   - A browser, preferably the Microsoft Edge or Chrome for consistency with the lab implementation tests.
+   - A browser, preferably the new Microsoft Edge or Chrome for consistency with the lab implementation tests.
 
 3. You will install other tools throughout the exercises.
 
-> **Very important**: You should be typing all the commands as they appear in the guide. Do not try to copy and paste to your command windows or other documents when instructed to enter the information shown in this document, except where explicitly stated in this document. There can be issues with Copy and Paste that result in errors, execution of instructions, or creation of file content.
+   > **Very important**: You should be typing all the commands as they appear in the guide. Do not try to copy and paste to your command windows or other documents when instructed to enter the information shown in this document, except where explicitly stated in this document. There can be issues with Copy and Paste that result in errors, execution of instructions, or creation of file content.
 
 ## Exercise 1: Create and build Docker images
 
@@ -137,12 +137,12 @@ In this task, you will create a new Dockerfile that will be used to build a cont
    Enter passphrase for key '.ssh/fabmedical':
    ```
 
-> **Note:** 
->   1. By default Azure VM IP addresses change if they are stopped. If you stopped your VM and didn't reserve the IP address or set a hostname then you should check the new IP address of the lab machine.
->
->  2. If you performed the Optional setup task an wish to use Visual Studio Code Remote Development then [follow the documentation](https://code.visualstudio.com/docs/remote/ssh#_connect-to-a-remote-host) on how to connect. If you run into issues check the SSH config hasn't stripped the dot and path from the key file.
->
->  3. If you did not install Visual Studio Code then you will be working with `Vim` for a few editing exercises. Steps are included on how to work with files.
+   > **Note:** 
+   >   1. By default Azure VM IP addresses change if they are stopped. If you stopped your VM and didn't reserve the IP address or set a hostname then you should check the new IP address of the lab machine.
+   >
+   >  2. If you performed the optional setup task an wish to use Visual Studio Code Remote Development then [follow the documentation](https://code.visualstudio.com/docs/remote/ssh#_connect-to-a-remote-host) on how to connect. If you run into issues check the SSH config hasn't stripped the dot and path from the key file.
+   >
+   >  3. If you did not install Visual Studio Code then you will be working with `Vim` for a few editing exercises. Steps are included on how to work with files.
 
 2. Navigate to the `content-api` folder. List the files in the folder with this command. The output should look like the screenshot below.
 
@@ -313,7 +313,7 @@ In this task, you will create local Docker images for the application --- one fo
    ```bash
    docker image build -t content-web .
    ```
-11. When complete, you will see eight images now exist when you run the Docker images command.
+8. When complete, you will see eight images now exist when you run the Docker images command.
 
    ```bash
    docker image ls
@@ -424,40 +424,40 @@ The web application container will be calling endpoints exposed by the API appli
 
 10. Enter the command to show running containers. You will observe that the `api` container is in the list. Use the docker logs command to see that the API application has connected to MongoDB.
 
-   ```bash
-   docker container ls
-   docker container logs api
-   ```
+      ```bash
+      docker container ls
+      docker container logs api
+      ```
 
    ![In this screenshot of the console window, docker container ls has been typed and run at the command prompt, and the "api" container is in the list with the following values for Container ID, Image, Command, Created, Status, Ports, and Names: 458d47f2aaf1, content-api, "docker-entrypoint.s...", 37 seconds ago, Up 36 seconds, 0.0.0.0:3001->3001/tcp, and api.](media/image61.png "List Docker containers")
 
 11. Test the API by curling the URL. You will see JSON output containing speaker information.
 
-   ```bash
-   curl http://localhost:3001/speakers
-   ```
+      ```bash
+      curl http://localhost:3001/speakers
+      ```
 
 12. Create and start the web application container with a similar `docker container run` command -- instruct the docker engine to use any port with the `-P` command.
 
-   ```bash
-   docker container run --name web --net fabmedical -P -d content-web
-   ```
+      ```bash
+      docker container run --name web --net fabmedical -P -d content-web
+      ```
 
 13. Enter the command to show running containers again, and you will observe that both the API and web containers are in the list. The web container shows a dynamically assigned port mapping to its internal container port `3000`.
 
-   ```bash
-   docker container ls
-   ```
+      ```bash
+      docker container ls
+      ```
 
    ![In this screenshot of the console window, docker container ls has again been typed and run at the command prompt. 0.0.0.0:32768->3000/tcp is highlighted under Ports.](media/image62.png "List Docker containers")
 
 14. Test the web application by fetching the URL with curl. For the port, use the dynamically assigned port, which you can find in the output from the previous command. You will see HTML output, as you did when testing previously.
 
-   ```bash
-   curl http://localhost:32768/speakers.html
-   ```
+      ```bash
+      curl http://localhost:32768/speakers.html
+      ```
 
-   > **Note:** the port number (32768) may be different in your enviornment, so check output from Step 15.
+      > **Note:** the port number (32768) may be different in your enviornment, so check output from Step 15.
 
 ### Task 4: Setup environment variables
 
@@ -581,7 +581,7 @@ In this task, you will use GitHub Actions to build your Docker images and pushes
 
 3. The Access keys blade displays the Login server, username, and password that will be required for the next step. Keep this handy as you perform actions on the build VM.
 
-   > **Note**: If the username and password do not appear, select Enable on the Admin user option.
+   > **Note**: If the username and password do not appear, select _Enable_ on the _Admin_ user option.
 
 4. In another browser tab open GitHub, and open your **Fabmedical** repository. Select the **Settings** tab.
 
@@ -664,6 +664,8 @@ In this task, you will use GitHub Actions to build your Docker images and pushes
               ${{ env.containerRegistry }}/${{ env.imageRepository }}:${{ env.tag }}
               ${{ env.containerRegistry }}/${{ env.imageRepository }}:latest
     ```
+
+   > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex1-task5-actions.yaml) and use the file as your template. Make sure to update [SHORT_SUFFIX].
 
 10. Save the file and exit Vi by pressing `<Esc>` then `:wq`.
 
@@ -1143,6 +1145,8 @@ In this task, deploy the web application and expose it to the Internet via a Kub
            terminationGracePeriodSeconds: 30
    ```
 
+   > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task2-deployment.yaml) and use the file as your template. Make sure to update [LOGINSERVER].
+
 4. Update the `[LOGINSERVER]` entry to match the name of your Azure Container Registry Login Server.
 
 5. Select the **...** button and choose **Save**.
@@ -1182,6 +1186,8 @@ In this task, deploy the web application and expose it to the Internet via a Kub
      sessionAffinity: None
      type: LoadBalancer
    ```
+
+   > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task2-service.yaml) and use the file as your template.
 
 9. Save changes and close the editor.
 
@@ -1242,7 +1248,7 @@ In this task, you will deploy the **content-web** service using a [Helm](https:/
     code values.yaml
     ```
 
-9. Search for the `image` definition and update the values so that they match the following:
+9. Search for the `image` definition and update the values so that they match the following (remember to replace [LOGINSERVER]):
 
     ```yaml
     image:
@@ -1439,6 +1445,8 @@ In this task, you will use GitHub Actions to automate the process for deploying 
             HELM_EXPERIMENTAL_OCI: 1
     ```
 
+   > Note: you can download the GitHub Actions file below after step 7.
+
 3. Save the file.
 
 4. In the Azure Cloud Shell, use the following command to output the `/.kube/config` file that contains the credentials for authenticating with Azure Kubernetes Service. These credentials were retrieved previously and will also be needed by GitHub Actions to deploy to AKS. Then copy the contents of the file.
@@ -1489,6 +1497,8 @@ In this task, you will use GitHub Actions to automate the process for deploying 
             KUBECONFIG: './kubeconfig'
             HELM_EXPERIMENTAL_OCI: 1
     ```
+
+   > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex3-task4-actions.yaml) and use the file as your template. Make sure to update [LOGINSERVER].
 
 8. Save the file.
 
@@ -2023,6 +2033,8 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
               class: nginx
     ```
 
+      > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex5-task4-certs.yaml) and use the file as your template.
+
 12. Save changes and close the editor.
 
 13. Create the issuer using `kubectl`.
@@ -2060,6 +2072,8 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
         name: letsencrypt-prod
         kind: ClusterIssuer
     ```
+
+      > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex5-task4-cert.yaml) and use the file as your template. Make sure to update the placeholders.
 
 15. Save changes and close the editor.
 
@@ -2105,10 +2119,10 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
    spec:
       tls:
       - hosts:
-         - fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         - fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
          secretName: tls-secret
       rules:
-         - host: fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         - host: fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
          http:
             paths:
             - path: /(.*)
@@ -2120,6 +2134,7 @@ In this task you will setup a Kubernetes Ingress using an [nginx proxy server](h
                   serviceName: api
                   servicePort: 3001
    ```
+      > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex5-task4-ingress.yaml) and use the file as your template. Make sure to update the placeholders.
 
 18. Save changes and close the editor.
 
@@ -2210,10 +2225,10 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
    spec:
       tls:
          - hosts:
-         - fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         - fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
          secretName: tls-secret
       rules:
-         - host: fabmedical-sjw-ingress.westus2.cloudapp.azure.com
+         - host:fabmedical-[SUFFIX]-ingress.[AZURE-REGION].cloudapp.azure.com
          http:
             paths:
                - path: /(.*)
@@ -2224,7 +2239,7 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
                backend:            
                   serviceName: api
                   servicePort: 3001
-         - host: fabmedical-sjw.trafficmanager.net
+         - host: fabmedical-[SUFFIX].trafficmanager.net
          http:
             paths:
                - path: /(.*)
@@ -2236,6 +2251,8 @@ In this task, you will setup Azure Traffic Manager as a multi-region load balanc
                   serviceName: api
                   servicePort: 3001
    ```
+      > Note: you can [download this as a YAML file](lab-files/yaml-templates/ex5-task4-ingress-tm.yaml) and use the file as your template. Make sure to update the placeholders.
+
 
       Save the file and apply the changes to your AKS cluster by issuing the following command.
 
